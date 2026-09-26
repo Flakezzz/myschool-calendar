@@ -6,14 +6,51 @@
   --line: #e6ddd0;
   --accent: #e85d4c;
   --navy: #1b4d6e;
+  --navy-solid: #1b4d6e;
+  --navy-dim: #6f93ab;
+  --btn-bg: #f0e8db;
+  --sub-card-bg: #fbf7f0;
+  --seat-color: #2f7d57;
   --shadow: 0 10px 30px rgba(28, 42, 58, 0.08);
+  color-scheme: light;
   color: var(--ink);
   font-family: Manrope, system-ui, sans-serif;
   background: var(--bg);
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14181f;
+    --card: #1e242c;
+    --ink: #edf0f4;
+    --muted: #99a3b0;
+    --line: #2b323c;
+    --navy: #8fb8d9;
+    --btn-bg: #2b323c;
+    --sub-card-bg: #232a33;
+    --seat-color: #4fbf8a;
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #14181f;
+  --card: #1e242c;
+  --ink: #edf0f4;
+  --muted: #99a3b0;
+  --line: #2b323c;
+  --navy: #8fb8d9;
+  --btn-bg: #2b323c;
+  --sub-card-bg: #232a33;
+  --seat-color: #4fbf8a;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html,
@@ -24,8 +61,18 @@ body,
   background: var(--bg);
 }
 
+body {
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
 button {
   font: inherit;
+  color: inherit;
+}
+
+button,
+a {
+  -webkit-touch-callout: none;
 }
 
 .app {
@@ -56,7 +103,7 @@ button {
   font-weight: 800;
 }
 
-.subs-btn {
+.theme-btn {
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--navy);
@@ -89,7 +136,7 @@ button {
   height: 36px;
   border: 0;
   border-radius: 12px;
-  background: #f0e8db;
+  background: var(--btn-bg);
   cursor: pointer;
 }
 
@@ -106,6 +153,21 @@ button {
 .grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+}
+
+@keyframes month-fade {
+  from {
+    opacity: 0;
+    transform: translateX(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.grid {
+  animation: month-fade 200ms ease-out;
 }
 
 .weekdays span {
@@ -127,6 +189,7 @@ button {
   justify-content: center;
   gap: 4px;
   cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .cell.empty {
@@ -134,7 +197,7 @@ button {
 }
 
 .cell.selected {
-  background: #1b4d6e;
+  background: var(--navy-solid);
   color: #fff;
 }
 
@@ -163,6 +226,21 @@ button {
 .day-block h2 {
   font-size: 16px;
   margin: 0 0 10px;
+}
+
+@keyframes list-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.day-content {
+  animation: list-fade 220ms ease-out;
 }
 
 .club-list {
@@ -217,7 +295,7 @@ button {
 .seats {
   font-size: 12px;
   font-weight: 700;
-  color: #2f7d57;
+  color: var(--seat-color);
 }
 
 .full {
@@ -244,13 +322,34 @@ button {
   font-size: 13px;
 }
 
+@keyframes backdrop-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes sheet-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .sheet-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(28, 42, 58, 0.35);
+  background: rgba(10, 14, 20, 0.45);
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  animation: backdrop-fade 180ms ease-out;
 }
 
 .sheet {
@@ -258,12 +357,13 @@ button {
   background: var(--card);
   border-radius: 24px 24px 0 0;
   padding: 10px 18px 28px;
+  animation: sheet-slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .sheet-handle {
   width: 42px;
   height: 4px;
-  background: #ddd;
+  background: var(--line);
   border-radius: 999px;
   margin: 6px auto 12px;
 }
@@ -281,10 +381,11 @@ button {
 
 .icon-btn {
   border: 0;
-  background: #f0e8db;
+  background: var(--btn-bg);
   width: 32px;
   height: 32px;
   border-radius: 10px;
+  cursor: pointer;
 }
 
 .sheet-desc {
@@ -310,15 +411,44 @@ button {
   font-weight: 700;
 }
 
+.sheet-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .pay-btn {
+  flex: 1;
   width: 100%;
+  min-height: 58px;
   border: 0;
   background: var(--accent);
   color: #fff;
   font-weight: 800;
   border-radius: 16px;
-  padding: 14px;
+  padding: 10px 6px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.pay-btn span {
+  font-size: 14px;
+}
+
+.pay-btn em {
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.pay-btn.secondary {
+  background: var(--navy-dim);
 }
 
 .sub-list {
@@ -333,7 +463,7 @@ button {
   border: 1px solid var(--line);
   border-radius: 18px;
   padding: 14px 16px;
-  background: #fbf7f0;
+  background: var(--sub-card-bg);
 }
 
 .sub-top {
@@ -358,7 +488,7 @@ button {
   margin: 4px 0 2px;
   font-size: 12px;
   font-weight: 700;
-  color: #2f7d57;
+  color: var(--seat-color);
 }
 
 .sub-desc {
@@ -384,7 +514,7 @@ button {
   bottom: 18px;
   max-width: 398px;
   margin: 0 auto;
-  background: var(--navy);
+  background: var(--navy-solid);
   color: #fff;
   border-radius: 16px;
   padding: 12px 14px;
@@ -392,13 +522,15 @@ button {
   gap: 10px;
   align-items: center;
   justify-content: space-between;
+  animation: sheet-slide-up 220ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast button {
   border: 0;
   background: #fff;
-  color: var(--navy);
+  color: var(--navy-solid);
   border-radius: 10px;
   padding: 6px 10px;
   font-weight: 800;
+  cursor: pointer;
 }

@@ -4,9 +4,11 @@ type Props = {
   club: Club;
   onClose: () => void;
   onPay: (club: Club) => void;
+  onOpenSubscriptions: () => void;
+  minSubPrice: number;
 };
 
-export function ClubSheet({ club, onClose, onPay }: Props) {
+export function ClubSheet({ club, onClose, onPay, onOpenSubscriptions, minSubPrice }: Props) {
   const left = club.seats - club.taken;
   const full = left <= 0;
 
@@ -43,14 +45,27 @@ export function ClubSheet({ club, onClose, onPay }: Props) {
             </dd>
           </div>
         </dl>
-        <button
-          className="pay-btn"
-          type="button"
-          disabled={full}
-          onClick={() => onPay(club)}
-        >
-          {full ? "Немає місць" : `Зареєструватись · ${club.priceUah} ₴`}
-        </button>
+        <div className="sheet-actions">
+          <button
+            className="pay-btn primary"
+            type="button"
+            disabled={full}
+            onClick={() => onPay(club)}
+          >
+            {full ? (
+              <span>Немає місць</span>
+            ) : (
+              <>
+                <span>Записатись</span>
+                <em>{club.priceUah} ₴</em>
+              </>
+            )}
+          </button>
+          <button className="pay-btn secondary" type="button" onClick={onOpenSubscriptions}>
+            <span>Абонемент</span>
+            <em>від {minSubPrice} ₴</em>
+          </button>
+        </div>
       </article>
     </div>
   );

@@ -5,6 +5,7 @@ import { Calendar } from "./components/Calendar";
 import { ClubList } from "./components/ClubList";
 import { ClubSheet } from "./components/ClubSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
 
 export function App() {
@@ -43,14 +44,17 @@ export function App() {
     );
   };
 
+  const onOpenSubscriptions = () => {
+    setOpen(null);
+    setSubsOpen(true);
+  };
+
   return (
     <main className="app">
       <header className="top">
         <div className="top-row">
           <p className="eyebrow">English School</p>
-          <button type="button" className="subs-btn" onClick={() => setSubsOpen(true)}>
-            Абонементи
-          </button>
+          <ThemeToggle />
         </div>
         <h1>Календар клабів</h1>
         <div className="month-nav">
@@ -73,11 +77,21 @@ export function App() {
       />
 
       <section className="day-block">
-        <h2>{formatDayTitle(selected)}</h2>
-        <ClubList clubs={dayClubs} onOpen={setOpen} />
+        <div key={selected} className="day-content">
+          <h2>{formatDayTitle(selected)}</h2>
+          <ClubList clubs={dayClubs} onOpen={setOpen} />
+        </div>
       </section>
 
-      {open ? <ClubSheet club={open} onClose={() => setOpen(null)} onPay={onPay} /> : null}
+      {open ? (
+        <ClubSheet
+          club={open}
+          onClose={() => setOpen(null)}
+          onPay={onPay}
+          onOpenSubscriptions={onOpenSubscriptions}
+          minSubPrice={Math.min(...subscriptions.map((s) => s.priceUah))}
+        />
+      ) : null}
       {subsOpen ? (
         <SubscriptionsSheet
           subscriptions={subscriptions}

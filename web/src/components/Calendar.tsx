@@ -32,7 +32,7 @@ export function Calendar({ year, month, selected, clubs, onSelect }: Props) {
           <span key={d}>{d}</span>
         ))}
       </div>
-      <div className="grid">
+      <div className="grid" key={`${year}-${month}`}>
         {cells.map((day, i) => {
           if (!day) return <div key={`e-${i}`} className="cell empty" />;
           const iso = isoDate(year, month, day);
