@@ -1,32 +1,27 @@
-import { useEffect, useState } from "react";
-import { applyTheme, getStoredTheme, type ThemeMode } from "../lib/theme";
+import { useState } from "react";
+import { applyTheme, getEffectiveTheme, type ThemeMode } from "../lib/theme";
+import { syncTelegramTheme } from "../lib/telegram";
 
-const ORDER: ThemeMode[] = ["system", "light", "dark"];
-const LABELS: Record<ThemeMode, string> = {
-  system: "Авто",
-  light: "Світла",
-  dark: "Темна",
-};
 const ICONS: Record<ThemeMode, string> = {
-  system: "\u{1F5A5}️",
   light: "☀️",
   dark: "\u{1F319}",
 };
 
 export function ThemeToggle() {
-  const [mode, setMode] = useState<ThemeMode>(getStoredTheme);
+  const [mode, setMode] = useState<ThemeMode>(getEffectiveTheme);
 
-  useEffect(() => {
-    applyTheme(mode);
-  }, [mode]);
-
-  const next = () => {
-    setMode(ORDER[(ORDER.indexOf(mode) + 1) % ORDER.length]);
+  const toggle = () => {
+    const next: ThemeMode = mode === "dark" ? "light" : "dark";
+    applyTheme(next);
+    syncTelegramTheme(next);
+    setMode(next);
   };
 
   return (
-    <button type="button" className="theme-btn" onClick={next} aria-label="Тема оформлення">
-      <span aria-hidden="true">{ICONS[mode]}</span> {LABELS[mode]}
+    <button type="button" className="theme-btn" onClick={toggle} aria-label="Змінити тему">
+      <span key={mode} className="theme-icon" aria-hidden="true">
+        {ICONS[mode]}
+      </span>
     </button>
   );
 }
