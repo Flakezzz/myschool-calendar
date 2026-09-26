@@ -1,0 +1,404 @@
+:root {
+  --bg: #f4efe6;
+  --card: #fffdf8;
+  --ink: #1c2a3a;
+  --muted: #6d7380;
+  --line: #e6ddd0;
+  --accent: #e85d4c;
+  --navy: #1b4d6e;
+  --shadow: 0 10px 30px rgba(28, 42, 58, 0.08);
+  color: var(--ink);
+  font-family: Manrope, system-ui, sans-serif;
+  background: var(--bg);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+  background: var(--bg);
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 18px 16px 40px;
+}
+
+.top h1 {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 28px;
+  margin: 4px 0 14px;
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--navy);
+  font-weight: 800;
+}
+
+.subs-btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--navy);
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+  padding: 7px 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 8px 10px;
+  box-shadow: var(--shadow);
+}
+
+.month-nav span {
+  font-weight: 800;
+}
+
+.month-nav button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 12px;
+  background: #f0e8db;
+  cursor: pointer;
+}
+
+.calendar {
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 12px 10px 14px;
+  box-shadow: var(--shadow);
+}
+
+.weekdays,
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.weekdays span {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding-bottom: 8px;
+}
+
+.cell {
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  cursor: pointer;
+}
+
+.cell.empty {
+  cursor: default;
+}
+
+.cell.selected {
+  background: #1b4d6e;
+  color: #fff;
+}
+
+.cell.today:not(.selected) .num {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.dots {
+  display: flex;
+  gap: 3px;
+  height: 6px;
+}
+
+.dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: block;
+}
+
+.day-block {
+  margin-top: 18px;
+}
+
+.day-block h2 {
+  font-size: 16px;
+  margin: 0 0 10px;
+}
+
+.club-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.club-card {
+  width: 100%;
+  display: flex;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+
+.stripe {
+  width: 8px;
+  flex: none;
+}
+
+.club-body {
+  padding: 12px 14px;
+  flex: 1;
+}
+
+.club-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.club-top em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.club-body p {
+  margin: 4px 0 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.seats {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2f7d57;
+}
+
+.full {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.empty-day {
+  background: var(--card);
+  border: 1px dashed var(--line);
+  border-radius: 18px;
+  padding: 22px;
+  text-align: center;
+}
+
+.empty-day p {
+  margin: 0 0 4px;
+  font-weight: 800;
+}
+
+.empty-day span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 42, 58, 0.35);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: min(430px, 100%);
+  background: var(--card);
+  border-radius: 24px 24px 0 0;
+  padding: 10px 18px 28px;
+}
+
+.sheet-handle {
+  width: 42px;
+  height: 4px;
+  background: #ddd;
+  border-radius: 999px;
+  margin: 6px auto 12px;
+}
+
+.sheet header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.sheet h2 {
+  font-family: Fraunces, Georgia, serif;
+  margin: 0;
+}
+
+.icon-btn {
+  border: 0;
+  background: #f0e8db;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+}
+
+.sheet-desc {
+  color: var(--muted);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 0 0 16px;
+}
+
+.facts dt {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.facts dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+
+.pay-btn {
+  width: 100%;
+  border: 0;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+  border-radius: 16px;
+  padding: 14px;
+  cursor: pointer;
+}
+
+.sub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.sub-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: #fbf7f0;
+}
+
+.sub-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.sub-top strong {
+  font-family: Fraunces, Georgia, serif;
+  font-size: 17px;
+}
+
+.sub-top em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--navy);
+}
+
+.sub-sessions {
+  margin: 4px 0 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2f7d57;
+}
+
+.sub-desc {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.sub-card .pay-btn {
+  padding: 11px;
+  border-radius: 14px;
+}
+
+.pay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toast {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 18px;
+  max-width: 398px;
+  margin: 0 auto;
+  background: var(--navy);
+  color: #fff;
+  border-radius: 16px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.toast button {
+  border: 0;
+  background: #fff;
+  color: var(--navy);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-weight: 800;
+}

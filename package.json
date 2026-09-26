@@ -1,0 +1,14 @@
+{
+  "name": "english-school-calendar",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "concurrently -n web,api \"npm run dev -w web\" \"npm run dev -w server\"",
+    "build": "npm run build -w web && npm run build -w server",
+    "start": "npm run start -w server"
+  },
+  "workspaces": ["web", "server"],
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
