@@ -346,7 +346,7 @@ a {
   font-size: 13px;
 }
 
-@keyframes backdrop-fade {
+@keyframes backdrop-fade-in {
   from {
     opacity: 0;
   }
@@ -355,14 +355,34 @@ a {
   }
 }
 
-@keyframes sheet-slide-up {
+@keyframes backdrop-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-slide-in {
   from {
     opacity: 0;
-    transform: translateY(28px);
+    transform: translateY(100%);
   }
   to {
     opacity: 1;
-    transform: none;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sheet-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(100%);
   }
 }
 
@@ -373,11 +393,11 @@ a {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: backdrop-fade 180ms ease-out both;
+  animation: backdrop-fade-in 180ms ease-out both;
 }
 
 .sheet-backdrop.closing {
-  animation: backdrop-fade 200ms ease-in both reverse;
+  animation: backdrop-fade-out 200ms ease-in both;
 }
 
 .sheet {
@@ -385,11 +405,11 @@ a {
   background: var(--card);
   border-radius: 24px 24px 0 0;
   padding: 10px 18px 28px;
-  animation: sheet-slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: sheet-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .sheet.closing {
-  animation: sheet-slide-up 220ms cubic-bezier(0.4, 0, 1, 1) both reverse;
+  animation: sheet-slide-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 .sheet-handle {
@@ -554,7 +574,7 @@ a {
   gap: 10px;
   align-items: center;
   justify-content: space-between;
-  animation: sheet-slide-up 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheet-slide-in 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .toast button {
