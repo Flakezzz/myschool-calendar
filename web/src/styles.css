@@ -106,6 +106,7 @@ a {
 .theme-btn {
   border: 1px solid var(--line);
   background: var(--card);
+  color: var(--ink);
   border-radius: 999px;
   width: 40px;
   height: 40px;
@@ -117,22 +118,26 @@ a {
   overflow: hidden;
 }
 
-.theme-btn .theme-icon {
+.theme-icon-stack {
+  position: relative;
+  width: 20px;
+  height: 20px;
   display: inline-block;
-  font-size: 18px;
-  line-height: 1;
-  animation: theme-icon-pop 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes theme-icon-pop {
-  from {
-    opacity: 0;
-    transform: rotate(-90deg) scale(0.4);
-  }
-  to {
-    opacity: 1;
-    transform: rotate(0) scale(1);
-  }
+.theme-icon {
+  position: absolute;
+  inset: 0;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+  transform: scale(0.4) rotate(-60deg);
+  transition: opacity 360ms ease, transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.theme-icon.is-active {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
 }
 
 .month-nav {
@@ -368,7 +373,11 @@ a {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  animation: backdrop-fade 180ms ease-out;
+  animation: backdrop-fade 180ms ease-out both;
+}
+
+.sheet-backdrop.closing {
+  animation: backdrop-fade 200ms ease-in both reverse;
 }
 
 .sheet {
@@ -376,7 +385,11 @@ a {
   background: var(--card);
   border-radius: 24px 24px 0 0;
   padding: 10px 18px 28px;
-  animation: sheet-slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheet-slide-up 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sheet.closing {
+  animation: sheet-slide-up 220ms cubic-bezier(0.4, 0, 1, 1) both reverse;
 }
 
 .sheet-handle {

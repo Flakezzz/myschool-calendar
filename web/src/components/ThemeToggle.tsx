@@ -1,11 +1,7 @@
 import { useState } from "react";
 import { applyTheme, getEffectiveTheme, type ThemeMode } from "../lib/theme";
 import { syncTelegramTheme } from "../lib/telegram";
-
-const ICONS: Record<ThemeMode, string> = {
-  light: "☀️",
-  dark: "\u{1F319}",
-};
+import { MoonIcon, SunIcon } from "./ThemeIcons";
 
 export function ThemeToggle() {
   const [mode, setMode] = useState<ThemeMode>(getEffectiveTheme);
@@ -19,8 +15,9 @@ export function ThemeToggle() {
 
   return (
     <button type="button" className="theme-btn" onClick={toggle} aria-label="Змінити тему">
-      <span key={mode} className="theme-icon" aria-hidden="true">
-        {ICONS[mode]}
+      <span className="theme-icon-stack">
+        <SunIcon className={`theme-icon${mode === "light" ? " is-active" : ""}`} />
+        <MoonIcon className={`theme-icon${mode === "dark" ? " is-active" : ""}`} />
       </span>
     </button>
   );

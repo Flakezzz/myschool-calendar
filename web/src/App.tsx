@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { clubs as seed, type Club } from "./data/clubs";
 import { subscriptions, type Subscription } from "./data/subscriptions";
 import { Calendar } from "./components/Calendar";
@@ -7,6 +7,7 @@ import { ClubSheet } from "./components/ClubSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
+import { usePresence } from "./lib/usePresence";
 
 export function App() {
   const now = new Date();
@@ -18,6 +19,13 @@ export function App() {
   const [open, setOpen] = useState<Club | null>(null);
   const [subsOpen, setSubsOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+
+  const [shownClub, setShownClub] = useState<Club | null>(null);
+  useEffect(() => {
+    if (open) setShownClub(open);
+  }, [open]);
+  const clubPresence = usePresence(!!open);
+  const subsPresence = usePresence(subsOpen);
 
   const shiftMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
@@ -83,18 +91,20 @@ export function App() {
         </div>
       </section>
 
-      {open ? (
+      {clubPresence.rendered && shownClub ? (
         <ClubSheet
-          club={open}
+          club={shownClub}
+          closing={clubPresence.closing}
           onClose={() => setOpen(null)}
           onPay={onPay}
           onOpenSubscriptions={onOpenSubscriptions}
           minSubPrice={Math.min(...subscriptions.map((s) => s.priceUah))}
         />
       ) : null}
-      {subsOpen ? (
+      {subsPresence.rendered ? (
         <SubscriptionsSheet
           subscriptions={subscriptions}
+          closing={subsPresence.closing}
           onClose={() => setSubsOpen(false)}
           onBuy={onBuySub}
         />

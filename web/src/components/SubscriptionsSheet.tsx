@@ -2,14 +2,15 @@ import { Subscription } from "../data/subscriptions";
 
 type Props = {
   subscriptions: Subscription[];
+  closing: boolean;
   onClose: () => void;
   onBuy: (sub: Subscription) => void;
 };
 
-export function SubscriptionsSheet({ subscriptions, onClose, onBuy }: Props) {
+export function SubscriptionsSheet({ subscriptions, closing, onClose, onBuy }: Props) {
   return (
-    <div className="sheet-backdrop" onClick={onClose} role="presentation">
-      <article className="sheet" onClick={(e) => e.stopPropagation()}>
+    <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
+      <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <header>
           <h2>Абонементи</h2>

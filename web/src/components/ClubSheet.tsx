@@ -2,19 +2,20 @@ import { Club } from "../data/clubs";
 
 type Props = {
   club: Club;
+  closing: boolean;
   onClose: () => void;
   onPay: (club: Club) => void;
   onOpenSubscriptions: () => void;
   minSubPrice: number;
 };
 
-export function ClubSheet({ club, onClose, onPay, onOpenSubscriptions, minSubPrice }: Props) {
+export function ClubSheet({ club, closing, onClose, onPay, onOpenSubscriptions, minSubPrice }: Props) {
   const left = club.seats - club.taken;
   const full = left <= 0;
 
   return (
-    <div className="sheet-backdrop" onClick={onClose} role="presentation">
-      <article className="sheet" onClick={(e) => e.stopPropagation()}>
+    <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
+      <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <header>
           <h2>{club.title}</h2>
