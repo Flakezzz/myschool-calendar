@@ -7,3 +7,4 @@ dist
 web/dist
 server/dist
 web/tsconfig.tsbuildinfo
+.claude
