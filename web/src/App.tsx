@@ -4,10 +4,15 @@ import { subscriptions, type Subscription } from "./data/subscriptions";
 import { Calendar } from "./components/Calendar";
 import { ClubList } from "./components/ClubList";
 import { ClubSheet } from "./components/ClubSheet";
+import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { postJSON } from "./lib/api";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
+import { getTelegramUserId } from "./lib/telegram";
 import { usePresence } from "./lib/usePresence";
+
+type SuccessInfo = { title: string; subtitle: string; priceUah: number };
 
 export function App() {
   const now = new Date();
@@ -18,14 +23,19 @@ export function App() {
   );
   const [open, setOpen] = useState<Club | null>(null);
   const [subsOpen, setSubsOpen] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [success, setSuccess] = useState<SuccessInfo | null>(null);
 
   const [shownClub, setShownClub] = useState<Club | null>(null);
   useEffect(() => {
     if (open) setShownClub(open);
   }, [open]);
+  const [shownSuccess, setShownSuccess] = useState<SuccessInfo | null>(null);
+  useEffect(() => {
+    if (success) setShownSuccess(success);
+  }, [success]);
   const clubPresence = usePresence(!!open);
   const subsPresence = usePresence(subsOpen);
+  const successPresence = usePresence(!!success);
 
   const shiftMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
@@ -40,16 +50,28 @@ export function App() {
 
   const onPay = (club: Club) => {
     setOpen(null);
-    setNotice(
-      `Оплата через Monobank буде підключена далі. Клаб «${club.title}» — ${club.priceUah} ₴.`,
-    );
+    const telegramUserId = getTelegramUserId();
+    if (telegramUserId) {
+      postJSON("/registrations", { clubId: club.id, telegramUserId }).catch((err) =>
+        console.warn("registration failed", err),
+      );
+    }
+    setSuccess({
+      title: club.title,
+      subtitle: `${club.date} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
+      priceUah: club.priceUah,
+    });
   };
 
   const onBuySub = (sub: Subscription) => {
     setSubsOpen(false);
-    setNotice(
-      `Оплата через Monobank буде підключена далі. Абонемент «${sub.title}» — ${sub.priceUah} ₴.`,
-    );
+    const telegramUserId = getTelegramUserId();
+    if (telegramUserId) {
+      postJSON("/subscriptions/purchase", { subscriptionId: sub.id, telegramUserId }).catch((err) =>
+        console.warn("subscription purchase failed", err),
+      );
+    }
+    setSuccess({ title: sub.title, subtitle: sub.sessions, priceUah: sub.priceUah });
   };
 
   const onOpenSubscriptions = () => {
@@ -109,13 +131,14 @@ export function App() {
           onBuy={onBuySub}
         />
       ) : null}
-      {notice ? (
-        <div className="toast" role="status">
-          {notice}
-          <button type="button" onClick={() => setNotice(null)}>
-            OK
-          </button>
-        </div>
+      {successPresence.rendered && shownSuccess ? (
+        <PaymentSuccessSheet
+          title={shownSuccess.title}
+          subtitle={shownSuccess.subtitle}
+          priceUah={shownSuccess.priceUah}
+          closing={successPresence.closing}
+          onClose={() => setSuccess(null)}
+        />
       ) : null}
     </main>
   );

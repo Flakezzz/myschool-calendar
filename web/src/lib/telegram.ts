@@ -15,6 +15,11 @@ export function syncTelegramTheme(mode: "light" | "dark") {
   tg.setBackgroundColor(color);
 }
 
+export function getTelegramUserId(): string | null {
+  const id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  return id ? String(id) : null;
+}
+
 declare global {
   interface Window {
     Telegram?: {

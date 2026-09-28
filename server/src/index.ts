@@ -2,6 +2,8 @@ import cors from "cors";
 import express from "express";
 import { Bot, InlineKeyboard } from "grammy";
 import { clubs } from "./clubs.js";
+import { startReminderScheduler } from "./reminders.js";
+import { addRegistration } from "./store.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN ?? "";
@@ -24,7 +26,7 @@ app.get("/api/clubs", (_req, res) => {
 });
 
 app.post("/api/registrations", async (req, res) => {
-  const { clubId, name } = req.body as { clubId?: string; name?: string };
+  const { clubId, telegramUserId } = req.body as { clubId?: string; telegramUserId?: string };
   const club = clubs.find((c) => c.id === clubId);
   if (!club) {
     res.status(404).json({ error: "club_not_found" });
@@ -35,17 +37,42 @@ app.post("/api/registrations", async (req, res) => {
     return;
   }
 
-  // Placeholder: later create Monobank invoice and return pageUrl.
-  const message = `Нова заявка: ${name ?? "учень"} → ${club.title} (${club.date} ${club.startTime})`;
+  // MVP: payment is simulated as instantly successful. Monobank invoice
+  // creation + webhook confirmation will replace this later.
+  club.taken += 1;
+  if (telegramUserId) {
+    addRegistration({ type: "club", clubId: club.id, telegramUserId });
+  }
+
+  const message = `Нова оплачена заявка: ${club.title} (${club.date} ${club.startTime})`;
   if (bot && ADMIN_IDS.length) {
     await Promise.allSettled(ADMIN_IDS.map((id) => bot.api.sendMessage(id, message)));
   }
 
-  res.json({
-    status: "pending_payment",
-    payUrl: null,
-    hint: "Monobank invoice create will be wired here",
-  });
+  res.json({ status: "paid" });
+});
+
+app.post("/api/subscriptions/purchase", async (req, res) => {
+  const { subscriptionId, telegramUserId } = req.body as {
+    subscriptionId?: string;
+    telegramUserId?: string;
+  };
+  if (!subscriptionId) {
+    res.status(400).json({ error: "subscription_id_required" });
+    return;
+  }
+
+  // MVP: payment is simulated as instantly successful, same as club registration.
+  if (telegramUserId) {
+    addRegistration({ type: "subscription", subscriptionId, telegramUserId });
+  }
+
+  const message = `Новий оплачений абонемент: ${subscriptionId}`;
+  if (bot && ADMIN_IDS.length) {
+    await Promise.allSettled(ADMIN_IDS.map((id) => bot.api.sendMessage(id, message)));
+  }
+
+  res.json({ status: "paid" });
 });
 
 app.post("/api/payments/mono/webhook", (req, res) => {
@@ -67,4 +94,5 @@ if (bot) {
     });
   });
   bot.start();
+  startReminderScheduler(bot);
 }

@@ -8,3 +8,4 @@ web/dist
 server/dist
 web/tsconfig.tsbuildinfo
 .claude
+server/data
