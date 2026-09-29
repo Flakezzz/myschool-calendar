@@ -1,3 +1,5 @@
+import { supabase } from "./supabase.js";
+
 export type Club = {
   id: string;
   title: string;
@@ -13,61 +15,48 @@ export type Club = {
   color: string;
 };
 
-export const clubs: Club[] = [
-  {
-    id: "1",
-    title: "Drama Club",
-    description: "Рольові ігри, діалоги та міні-вистави англійською.",
-    date: "2026-09-25",
-    startTime: "16:00",
-    endTime: "17:30",
-    teacher: "Ms. Anna",
-    level: "A2–B1",
-    seats: 12,
-    taken: 8,
-    priceUah: 350,
-    color: "#E85D4C",
-  },
-  {
-    id: "2",
-    title: "Movie Talk",
-    description: "Короткі сцени з фільмів, словник і обговорення.",
-    date: "2026-09-25",
-    startTime: "18:00",
-    endTime: "19:00",
-    teacher: "Mr. James",
-    level: "B1+",
-    seats: 10,
-    taken: 10,
-    priceUah: 300,
-    color: "#3BA99C",
-  },
-  {
-    id: "3",
-    title: "Kids Speaking",
-    description: "Ігри та speaking для дітей 7–10 років.",
-    date: "2026-09-27",
-    startTime: "11:00",
-    endTime: "12:00",
-    teacher: "Ms. Oksana",
-    level: "Kids",
-    seats: 8,
-    taken: 3,
-    priceUah: 280,
-    color: "#E8B86D",
-  },
-  {
-    id: "4",
-    title: "Exam Boost",
-    description: "Speaking для підготовки до іспитів.",
-    date: "2026-09-30",
-    startTime: "17:00",
-    endTime: "18:30",
-    teacher: "Ms. Anna",
-    level: "B2",
-    seats: 6,
-    taken: 2,
-    priceUah: 450,
-    color: "#1B4D6E",
-  },
-];
+type ClubRow = {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  teacher: string;
+  level: string;
+  seats: number;
+  taken: number;
+  price_uah: number;
+  color: string;
+};
+
+function fromRow(row: ClubRow): Club {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    date: row.date,
+    startTime: row.start_time.slice(0, 5),
+    endTime: row.end_time.slice(0, 5),
+    teacher: row.teacher,
+    level: row.level,
+    seats: row.seats,
+    taken: row.taken,
+    priceUah: row.price_uah,
+    color: row.color,
+  };
+}
+
+export async function getClubs(): Promise<Club[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("clubs").select("*").order("date");
+  if (error) throw error;
+  return (data as ClubRow[]).map(fromRow);
+}
+
+export async function getClub(id: string): Promise<Club | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("clubs").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data ? fromRow(data as ClubRow) : null;
+}

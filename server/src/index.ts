@@ -1,9 +1,10 @@
 import cors from "cors";
 import express from "express";
 import { Bot, InlineKeyboard } from "grammy";
-import { clubs } from "./clubs.js";
+import { getClub, getClubs } from "./clubs.js";
 import { startReminderScheduler } from "./reminders.js";
 import { addRegistration } from "./store.js";
+import { getSubscription, getSubscriptions } from "./subscriptions.js";
 
 const PORT = Number(process.env.PORT ?? 3000);
 const BOT_TOKEN = process.env.BOT_TOKEN ?? "";
@@ -21,13 +22,27 @@ app.get("/api/health", (_req, res) => {
   res.json({ ok: true });
 });
 
-app.get("/api/clubs", (_req, res) => {
-  res.json({ clubs });
+app.get("/api/clubs", async (_req, res) => {
+  try {
+    res.json({ clubs: await getClubs() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "db_error" });
+  }
+});
+
+app.get("/api/subscriptions", async (_req, res) => {
+  try {
+    res.json({ subscriptions: await getSubscriptions() });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "db_error" });
+  }
 });
 
 app.post("/api/registrations", async (req, res) => {
   const { clubId, telegramUserId } = req.body as { clubId?: string; telegramUserId?: string };
-  const club = clubs.find((c) => c.id === clubId);
+  const club = clubId ? await getClub(clubId) : null;
   if (!club) {
     res.status(404).json({ error: "club_not_found" });
     return;
@@ -38,10 +53,14 @@ app.post("/api/registrations", async (req, res) => {
   }
 
   // MVP: payment is simulated as instantly successful. Monobank invoice
-  // creation + webhook confirmation will replace this later.
-  club.taken += 1;
+  // creation + webhook confirmation will replace this later. clubs.taken is
+  // kept accurate by a DB trigger on registrations insert.
   if (telegramUserId) {
-    addRegistration({ type: "club", clubId: club.id, telegramUserId });
+    try {
+      await addRegistration({ type: "club", clubId: club.id, telegramUserId });
+    } catch (err) {
+      console.error("failed to record registration", err);
+    }
   }
 
   const message = `Нова оплачена заявка: ${club.title} (${club.date} ${club.startTime})`;
@@ -57,17 +76,22 @@ app.post("/api/subscriptions/purchase", async (req, res) => {
     subscriptionId?: string;
     telegramUserId?: string;
   };
-  if (!subscriptionId) {
-    res.status(400).json({ error: "subscription_id_required" });
+  const subscription = subscriptionId ? await getSubscription(subscriptionId) : null;
+  if (!subscription) {
+    res.status(404).json({ error: "subscription_not_found" });
     return;
   }
 
   // MVP: payment is simulated as instantly successful, same as club registration.
   if (telegramUserId) {
-    addRegistration({ type: "subscription", subscriptionId, telegramUserId });
+    try {
+      await addRegistration({ type: "subscription", subscriptionId: subscription.id, telegramUserId });
+    } catch (err) {
+      console.error("failed to record subscription purchase", err);
+    }
   }
 
-  const message = `Новий оплачений абонемент: ${subscriptionId}`;
+  const message = `Новий оплачений абонемент: ${subscription.title}`;
   if (bot && ADMIN_IDS.length) {
     await Promise.allSettled(ADMIN_IDS.map((id) => bot.api.sendMessage(id, message)));
   }

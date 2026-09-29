@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
-import { clubs as seed, type Club } from "./data/clubs";
-import { subscriptions, type Subscription } from "./data/subscriptions";
+import { type Club } from "./data/clubs";
+import { type Subscription } from "./data/subscriptions";
 import { Calendar } from "./components/Calendar";
 import { ClubList } from "./components/ClubList";
 import { ClubSheet } from "./components/ClubSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { postJSON } from "./lib/api";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
+import { fetchClubs, fetchSubscriptions, purchaseSubscription, registerForClub } from "./lib/supabase";
 import { getTelegramUserId } from "./lib/telegram";
 import { usePresence } from "./lib/usePresence";
 
@@ -24,6 +24,21 @@ export function App() {
   const [open, setOpen] = useState<Club | null>(null);
   const [subsOpen, setSubsOpen] = useState(false);
   const [success, setSuccess] = useState<SuccessInfo | null>(null);
+
+  const [clubs, setClubs] = useState<Club[]>([]);
+  const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const reloadClubs = () => fetchClubs().then(setClubs).catch((err) => console.error("failed to load clubs", err));
+
+  useEffect(() => {
+    Promise.all([
+      fetchClubs().then(setClubs),
+      fetchSubscriptions().then(setSubscriptions),
+    ])
+      .catch((err) => console.error("failed to load data", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const [shownClub, setShownClub] = useState<Club | null>(null);
   useEffect(() => {
@@ -44,17 +59,17 @@ export function App() {
   };
 
   const dayClubs = useMemo(
-    () => seed.filter((c) => c.date === selected).sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    [selected],
+    () => clubs.filter((c) => c.date === selected).sort((a, b) => a.startTime.localeCompare(b.startTime)),
+    [clubs, selected],
   );
 
   const onPay = (club: Club) => {
     setOpen(null);
     const telegramUserId = getTelegramUserId();
     if (telegramUserId) {
-      postJSON("/registrations", { clubId: club.id, telegramUserId }).catch((err) =>
-        console.warn("registration failed", err),
-      );
+      registerForClub(club.id, telegramUserId)
+        .then(reloadClubs)
+        .catch((err) => console.warn("registration failed", err));
     }
     setSuccess({
       title: club.title,
@@ -67,7 +82,7 @@ export function App() {
     setSubsOpen(false);
     const telegramUserId = getTelegramUserId();
     if (telegramUserId) {
-      postJSON("/subscriptions/purchase", { subscriptionId: sub.id, telegramUserId }).catch((err) =>
+      purchaseSubscription(sub.id, telegramUserId).catch((err) =>
         console.warn("subscription purchase failed", err),
       );
     }
@@ -102,14 +117,20 @@ export function App() {
         year={year}
         month={month}
         selected={selected}
-        clubs={seed}
+        clubs={clubs}
         onSelect={setSelected}
       />
 
       <section className="day-block">
         <div key={selected} className="day-content">
           <h2>{formatDayTitle(selected)}</h2>
-          <ClubList clubs={dayClubs} onOpen={setOpen} />
+          {loading ? (
+            <div className="empty-day">
+              <p>Завантаження…</p>
+            </div>
+          ) : (
+            <ClubList clubs={dayClubs} onOpen={setOpen} />
+          )}
         </div>
       </section>
 
@@ -120,7 +141,7 @@ export function App() {
           onClose={() => setOpen(null)}
           onPay={onPay}
           onOpenSubscriptions={onOpenSubscriptions}
-          minSubPrice={Math.min(...subscriptions.map((s) => s.priceUah))}
+          minSubPrice={subscriptions.length ? Math.min(...subscriptions.map((s) => s.priceUah)) : 0}
         />
       ) : null}
       {subsPresence.rendered ? (

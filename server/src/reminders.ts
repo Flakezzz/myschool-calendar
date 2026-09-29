@@ -1,5 +1,5 @@
 import type { Bot } from "grammy";
-import { clubs } from "./clubs.js";
+import { getClub } from "./clubs.js";
 import { getClubRegistrations, markReminderSent } from "./store.js";
 
 const THRESHOLDS: { key: "day" | "h3" | "h1"; ms: number; label: string }[] = [
@@ -14,8 +14,9 @@ function clubStart(club: { date: string; startTime: string }): number {
 
 async function check(bot: Bot) {
   const now = Date.now();
-  for (const reg of getClubRegistrations()) {
-    const club = clubs.find((c) => c.id === reg.clubId);
+  for (const reg of await getClubRegistrations()) {
+    if (!reg.clubId) continue;
+    const club = await getClub(reg.clubId);
     if (!club) continue;
     const msUntil = clubStart(club) - now;
     if (msUntil <= 0) continue;
@@ -30,7 +31,7 @@ async function check(bot: Bot) {
         } catch (err) {
           console.error("reminder send failed", err);
         }
-        markReminderSent(reg.id, t.key);
+        await markReminderSent(reg.id, t.key);
       }
     }
   }
