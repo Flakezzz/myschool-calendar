@@ -57,6 +57,11 @@ function toHex(bytes: Uint8Array): string {
     .join("");
 }
 
+// A signed initData string stays cryptographically valid forever, so
+// without this window a copy captured once (a screenshot, a log, a shared
+// debugging session) would grant permanent admin write access on replay.
+const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60;
+
 // https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 async function verifyInitData(initData: string): Promise<{ id: string } | null> {
   const params = new URLSearchParams(initData);
@@ -72,6 +77,11 @@ async function verifyInitData(initData: string): Promise<{ id: string } | null> 
   const secretKey = await hmacSha256(new TextEncoder().encode("WebAppData"), BOT_TOKEN);
   const computedHash = toHex(await hmacSha256(secretKey, dataCheckString));
   if (computedHash !== hash) return null;
+
+  const authDate = Number(params.get("auth_date"));
+  if (!authDate) return null;
+  const ageSeconds = Date.now() / 1000 - authDate;
+  if (ageSeconds > MAX_INIT_DATA_AGE_SECONDS || ageSeconds < -300) return null;
 
   const userJson = params.get("user");
   if (!userJson) return null;

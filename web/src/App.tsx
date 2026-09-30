@@ -22,7 +22,7 @@ import { confirmDialog, FALLBACK_ADMIN_IDS, getTelegramUserId, isAdmin } from ".
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
-type SuccessInfo = { title: string; subtitle: string; priceUah: number };
+type SuccessInfo = { title: string; subtitle: string; priceUah?: number; failed?: boolean };
 
 function blankClub(): Club {
   const now = new Date();
@@ -114,14 +114,30 @@ export function App() {
     [clubs, selected],
   );
 
-  const onPay = (club: Club) => {
+  const onPay = async (club: Club) => {
     setOpen(null);
     const telegramUserId = getTelegramUserId();
+
     if (telegramUserId) {
-      registerForClub(club.id, telegramUserId)
-        .then(reloadClubs)
-        .catch((err) => console.warn("registration failed", err));
+      try {
+        await registerForClub(club.id, telegramUserId);
+      } catch (err) {
+        // The database enforces capacity, so this is a real rejection —
+        // never show a success screen for a booking that didn't happen.
+        const isFull = String(err).includes("club_full");
+        setSuccess({
+          title: club.title,
+          subtitle: isFull
+            ? "На жаль, вільних місць уже немає."
+            : "Спробуйте ще раз за хвилину.",
+          failed: true,
+        });
+        reloadClubs();
+        return;
+      }
+      reloadClubs();
     }
+
     setSuccess({
       title: club.title,
       subtitle: `${club.date} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
@@ -259,6 +275,7 @@ export function App() {
           title={shownSuccess.title}
           subtitle={shownSuccess.subtitle}
           priceUah={shownSuccess.priceUah}
+          failed={shownSuccess.failed}
           closing={successPresence.closing}
           onClose={() => setSuccess(null)}
         />

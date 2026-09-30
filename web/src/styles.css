@@ -477,6 +477,10 @@ a {
   justify-content: center;
 }
 
+.success-icon.is-failed {
+  background: var(--accent);
+}
+
 .success-sheet h2 {
   font-size: 20px;
 }
