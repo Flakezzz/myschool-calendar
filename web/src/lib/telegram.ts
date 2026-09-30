@@ -24,14 +24,17 @@ export function getTelegramInitData(): string {
   return window.Telegram?.WebApp?.initData ?? "";
 }
 
-const ADMIN_IDS = (import.meta.env.VITE_ADMIN_TELEGRAM_IDS ?? "")
+/** Fallback only — used if app_config can't be read. The live list comes
+ * from the database (see fetchAdminIds), so adding an admin doesn't need
+ * a rebuild. */
+export const FALLBACK_ADMIN_IDS = (import.meta.env.VITE_ADMIN_TELEGRAM_IDS ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-export function isAdmin(): boolean {
+export function isAdmin(adminIds: string[]): boolean {
   const id = getTelegramUserId();
-  return !!id && ADMIN_IDS.includes(id);
+  return !!id && adminIds.includes(id);
 }
 
 export function confirmDialog(message: string): Promise<boolean> {

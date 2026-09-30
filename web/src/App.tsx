@@ -11,8 +11,14 @@ import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { deleteClub, saveClub } from "./lib/adminApi";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
-import { fetchClubs, fetchSubscriptions, purchaseSubscription, registerForClub } from "./lib/supabase";
-import { confirmDialog, getTelegramUserId, isAdmin } from "./lib/telegram";
+import {
+  fetchAdminIds,
+  fetchClubs,
+  fetchSubscriptions,
+  purchaseSubscription,
+  registerForClub,
+} from "./lib/supabase";
+import { confirmDialog, FALLBACK_ADMIN_IDS, getTelegramUserId, isAdmin } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
@@ -49,6 +55,7 @@ export function App() {
 
   const [clubs, setClubs] = useState<Club[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
+  const [adminIds, setAdminIds] = useState<string[]>(FALLBACK_ADMIN_IDS);
   const [loading, setLoading] = useState(true);
 
   const reloadClubs = () => fetchClubs().then(setClubs).catch((err) => console.error("failed to load clubs", err));
@@ -60,6 +67,14 @@ export function App() {
     ])
       .catch((err) => console.error("failed to load data", err))
       .finally(() => setLoading(false));
+
+    // Keeps the build-time fallback if this fails, so the admin button
+    // doesn't disappear just because the config row is unreadable.
+    fetchAdminIds()
+      .then((ids) => {
+        if (ids.length) setAdminIds(ids);
+      })
+      .catch((err) => console.warn("failed to load admin ids", err));
   }, []);
 
   const [shownClub, setShownClub] = useState<Club | null>(null);
@@ -175,7 +190,7 @@ export function App() {
         <div className="top-row">
           <p className="eyebrow">English School</p>
           <div className="top-row-actions">
-            {isAdmin() ? (
+            {isAdmin(adminIds) ? (
               <button
                 type="button"
                 className="theme-btn admin-btn"

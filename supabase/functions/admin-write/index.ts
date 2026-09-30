@@ -15,7 +15,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const BOT_TOKEN = Deno.env.get("BOT_TOKEN") ?? "";
-const ADMIN_IDS = (Deno.env.get("ADMIN_TELEGRAM_IDS") ?? "")
+const FALLBACK_ADMIN_IDS = (Deno.env.get("ADMIN_TELEGRAM_IDS") ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
@@ -23,6 +23,27 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+/** The admin list lives in app_config so it can be changed with one SQL
+ * update rather than a redeploy. Falls back to the ADMIN_TELEGRAM_IDS
+ * secret if that row can't be read. */
+async function getAdminIds(): Promise<string[]> {
+  try {
+    const { data } = await supabase
+      .from("app_config")
+      .select("value")
+      .eq("key", "admin_telegram_ids")
+      .maybeSingle();
+    const ids = (data?.value ?? "")
+      .split(",")
+      .map((s: string) => s.trim())
+      .filter(Boolean);
+    if (ids.length) return ids;
+  } catch {
+    // fall through to the secret
+  }
+  return FALLBACK_ADMIN_IDS;
+}
 
 async function hmacSha256(key: BufferSource, data: string): Promise<Uint8Array> {
   const cryptoKey = await crypto.subtle.importKey("raw", key, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
@@ -70,7 +91,8 @@ Deno.serve(async (req) => {
     const { initData, action, table, payload } = await req.json();
 
     const user = await verifyInitData(initData ?? "");
-    if (!user || !ADMIN_IDS.includes(user.id)) {
+    const adminIds = await getAdminIds();
+    if (!user || !adminIds.includes(user.id)) {
       return new Response(JSON.stringify({ error: "forbidden" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

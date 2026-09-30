@@ -49,6 +49,23 @@ export async function fetchSubscriptions(): Promise<Subscription[]> {
   return data.map(fromSubscriptionRow);
 }
 
+/** Admin Telegram IDs, read at runtime from app_config so adding an admin
+ * is a single database change rather than a code rebuild. Only gates whether
+ * the admin UI is shown — actual write access is enforced by the
+ * admin-write Edge Function. */
+export async function fetchAdminIds(): Promise<string[]> {
+  const { data, error } = await supabase
+    .from("app_config")
+    .select("value")
+    .eq("key", "admin_telegram_ids")
+    .maybeSingle();
+  if (error) throw error;
+  return (data?.value ?? "")
+    .split(",")
+    .map((s: string) => s.trim())
+    .filter(Boolean);
+}
+
 export async function registerForClub(clubId: string, telegramUserId: string) {
   const { error } = await supabase
     .from("registrations")
