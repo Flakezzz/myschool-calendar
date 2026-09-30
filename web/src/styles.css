@@ -94,6 +94,17 @@ a {
   gap: 10px;
 }
 
+.top-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-btn {
+  font-size: 18px;
+  color: var(--ink);
+}
+
 .eyebrow {
   margin: 0;
   letter-spacing: 0.08em;
@@ -598,5 +609,108 @@ a {
 .pay-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.admin-add-btn {
+  margin: 10px 0 4px;
+  padding: 12px;
+  border-radius: 14px;
+}
+
+.admin-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.admin-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.admin-row-info span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-row-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.admin-delete-btn {
+  color: var(--accent);
+}
+
+.form-error {
+  margin: 10px 0 0;
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.club-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.club-form label {
+  display: grid;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.club-form input,
+.club-form textarea {
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--btn-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.color-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.color-swatch.is-selected {
+  border-color: var(--ink);
 }
 

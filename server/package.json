@@ -9,7 +9,6 @@
     "start": "node --env-file=../.env dist/index.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.117.2",
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "grammy": "^1.35.0"

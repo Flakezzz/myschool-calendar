@@ -1,18 +1,39 @@
 import { useEffect, useMemo, useState } from "react";
 import { type Club } from "./data/clubs";
 import { type Subscription } from "./data/subscriptions";
+import { AdminPanel } from "./components/AdminPanel";
 import { Calendar } from "./components/Calendar";
+import { ClubForm } from "./components/ClubForm";
 import { ClubList } from "./components/ClubList";
 import { ClubSheet } from "./components/ClubSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { deleteClub, saveClub } from "./lib/adminApi";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
 import { fetchClubs, fetchSubscriptions, purchaseSubscription, registerForClub } from "./lib/supabase";
-import { getTelegramUserId } from "./lib/telegram";
+import { confirmDialog, getTelegramUserId, isAdmin } from "./lib/telegram";
 import { usePresence } from "./lib/usePresence";
 
 type SuccessInfo = { title: string; subtitle: string; priceUah: number };
+
+function blankClub(): Club {
+  const now = new Date();
+  return {
+    id: crypto.randomUUID(),
+    title: "",
+    description: "",
+    date: isoDate(now.getFullYear(), now.getMonth(), now.getDate()),
+    startTime: "10:00",
+    endTime: "11:00",
+    teacher: "",
+    level: "",
+    seats: 10,
+    taken: 0,
+    priceUah: 0,
+    color: "#E85D4C",
+  };
+}
 
 export function App() {
   const now = new Date();
@@ -51,6 +72,18 @@ export function App() {
   const clubPresence = usePresence(!!open);
   const subsPresence = usePresence(subsOpen);
   const successPresence = usePresence(!!success);
+
+  const [adminOpen, setAdminOpen] = useState(false);
+  const [editingClub, setEditingClub] = useState<Club | null>(null);
+  const [editingIsNew, setEditingIsNew] = useState(false);
+  const [adminSaving, setAdminSaving] = useState(false);
+  const [adminError, setAdminError] = useState<string | null>(null);
+  const adminPresence = usePresence(adminOpen);
+  const [shownEditingClub, setShownEditingClub] = useState<Club | null>(null);
+  useEffect(() => {
+    if (editingClub) setShownEditingClub(editingClub);
+  }, [editingClub]);
+  const formPresence = usePresence(!!editingClub);
 
   const shiftMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
@@ -94,12 +127,62 @@ export function App() {
     setSubsOpen(true);
   };
 
+  const onAdminAddNew = () => {
+    setAdminError(null);
+    setEditingIsNew(true);
+    setEditingClub(blankClub());
+  };
+
+  const onAdminEdit = (club: Club) => {
+    setAdminError(null);
+    setEditingIsNew(false);
+    setEditingClub(club);
+  };
+
+  const onAdminDelete = async (club: Club) => {
+    const confirmed = await confirmDialog(`Видалити «${club.title}»?`);
+    if (!confirmed) return;
+    setAdminError(null);
+    try {
+      await deleteClub(club.id);
+      await reloadClubs();
+    } catch (err) {
+      setAdminError(String(err));
+    }
+  };
+
+  const onSaveClub = async (club: Club) => {
+    setAdminSaving(true);
+    setAdminError(null);
+    try {
+      await saveClub(club);
+      setEditingClub(null);
+      await reloadClubs();
+    } catch (err) {
+      setAdminError(String(err));
+    } finally {
+      setAdminSaving(false);
+    }
+  };
+
   return (
     <main className="app">
       <header className="top">
         <div className="top-row">
           <p className="eyebrow">English School</p>
-          <ThemeToggle />
+          <div className="top-row-actions">
+            {isAdmin() ? (
+              <button
+                type="button"
+                className="theme-btn admin-btn"
+                onClick={() => setAdminOpen(true)}
+                aria-label="Адмін-панель"
+              >
+                ⚙
+              </button>
+            ) : null}
+            <ThemeToggle />
+          </div>
         </div>
         <h1>Календар клабів</h1>
         <div className="month-nav">
@@ -159,6 +242,28 @@ export function App() {
           priceUah={shownSuccess.priceUah}
           closing={successPresence.closing}
           onClose={() => setSuccess(null)}
+        />
+      ) : null}
+      {adminPresence.rendered ? (
+        <AdminPanel
+          clubs={clubs}
+          closing={adminPresence.closing}
+          error={adminError}
+          onClose={() => setAdminOpen(false)}
+          onAddNew={onAdminAddNew}
+          onEdit={onAdminEdit}
+          onDelete={onAdminDelete}
+        />
+      ) : null}
+      {formPresence.rendered && shownEditingClub ? (
+        <ClubForm
+          initial={shownEditingClub}
+          isNew={editingIsNew}
+          closing={formPresence.closing}
+          saving={adminSaving}
+          error={adminError}
+          onClose={() => setEditingClub(null)}
+          onSave={onSaveClub}
         />
       ) : null}
     </main>

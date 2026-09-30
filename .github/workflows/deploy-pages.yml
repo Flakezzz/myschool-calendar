@@ -30,6 +30,10 @@ jobs:
           # secrecy of this key, are what protect the data.
           VITE_SUPABASE_URL: https://xbfnyctbevhkeojoagos.supabase.co
           VITE_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhiZm55Y3RiZXZoa2Vvam9hZ29zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA2NzQwODMsImV4cCI6MjEwNjI1MDA4M30._wB7wvTchHPcVgLI0gyfK8QjExvSp1Sc4fOVV-9FD7Q
+          # Not a secret: only gates whether the admin UI shows client-side.
+          # Real write access is enforced server-side in the admin-write
+          # Edge Function, which independently verifies Telegram identity.
+          VITE_ADMIN_TELEGRAM_IDS: "777037876"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web/dist
