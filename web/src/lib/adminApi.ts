@@ -3,12 +3,20 @@ import type { Subscription } from "../data/subscriptions";
 import { getTelegramInitData } from "./telegram";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL ?? "";
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
 const FUNCTION_URL = `${SUPABASE_URL}/functions/v1/admin-write`;
 
 async function call(action: "upsert" | "delete", table: "clubs" | "subscriptions", payload: unknown) {
+  // Supabase's gateway requires a valid JWT in Authorization before a
+  // request even reaches our function code — the anon key satisfies that.
+  // Our own admin check happens inside the function via Telegram's initData.
   const res = await fetch(FUNCTION_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      apikey: SUPABASE_ANON_KEY,
+    },
     body: JSON.stringify({ initData: getTelegramInitData(), action, table, payload }),
   });
   const data = await res.json();
