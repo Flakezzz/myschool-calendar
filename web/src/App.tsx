@@ -143,7 +143,8 @@ export function App() {
   };
 
   const onAdminDelete = async (club: Club) => {
-    const confirmed = await confirmDialog(`Видалити «${club.title}»?`);
+    const warning = club.taken > 0 ? ` Разом із ним буде видалено ${club.taken} записів.` : "";
+    const confirmed = await confirmDialog(`Видалити «${club.title}»?${warning}`);
     if (!confirmed) return;
     setAdminError(null);
     try {
