@@ -13,6 +13,7 @@ import { deleteClub, saveClub } from "./lib/adminApi";
 import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
 import { fetchClubs, fetchSubscriptions, purchaseSubscription, registerForClub } from "./lib/supabase";
 import { confirmDialog, getTelegramUserId, isAdmin } from "./lib/telegram";
+import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
 type SuccessInfo = { title: string; subtitle: string; priceUah: number };
@@ -84,6 +85,8 @@ export function App() {
     if (editingClub) setShownEditingClub(editingClub);
   }, [editingClub]);
   const formPresence = usePresence(!!editingClub);
+
+  useBodyScrollLock(clubPresence.rendered || subsPresence.rendered || successPresence.rendered || adminPresence.rendered || formPresence.rendered);
 
   const shiftMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
