@@ -111,7 +111,12 @@ begin
     join clubs c on c.id = reg.club_id
     where reg.type = 'club'
   loop
-    club_start := (r.date::text || ' ' || r.start_time::text)::timestamptz;
+    -- Club times are entered as local Kyiv time, but the database runs in
+    -- UTC — casting straight to timestamptz would read 16:00 as 16:00 UTC
+    -- (19:00 Kyiv) and fire every reminder ~3h late. AT TIME ZONE anchors
+    -- the naive value to Kyiv and handles DST automatically.
+    club_start := (r.date::text || ' ' || r.start_time::text)::timestamp
+                  at time zone 'Europe/Kyiv';
     hours_until := extract(epoch from (club_start - now())) / 3600;
 
     if hours_until <= 0 then
