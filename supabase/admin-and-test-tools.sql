@@ -14,8 +14,10 @@ create policy "public read admin ids" on app_config
 -- ---------------------------------------------------------------------
 -- TO ADD MORE ADMINS: put every Telegram ID here, comma-separated, no
 -- spaces needed. This one line is now the only place you change.
+-- Keep this value current — re-running the file writes it back over
+-- whatever is in the database.
 update app_config
-set value = '777037876'
+set value = '777037876,526386894'
 where key = 'admin_telegram_ids';
 
 -- Check who's an admin right now:

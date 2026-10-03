@@ -1,17 +1,37 @@
 import { Club } from "../data/clubs";
+import { passSessionsLeft, type MyPass } from "../lib/api";
 
 type Props = {
   club: Club;
   closing: boolean;
+  /** Set when the current user already has a booking for this club. */
+  bookedRegistrationId: string | null;
+  /** The pass this booking would spend, if the user has one with sessions left. */
+  pass: MyPass | null;
+  busy: boolean;
   onClose: () => void;
   onPay: (club: Club) => void;
+  onCancel: (registrationId: string) => void;
   onOpenSubscriptions: () => void;
   minSubPrice: number;
 };
 
-export function ClubSheet({ club, closing, onClose, onPay, onOpenSubscriptions, minSubPrice }: Props) {
+export function ClubSheet({
+  club,
+  closing,
+  bookedRegistrationId,
+  pass,
+  busy,
+  onClose,
+  onPay,
+  onCancel,
+  onOpenSubscriptions,
+  minSubPrice,
+}: Props) {
   const left = club.seats - club.taken;
   const full = left <= 0;
+  const booked = !!bookedRegistrationId;
+  const sessionsLeft = pass ? passSessionsLeft(pass) : null;
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -46,22 +66,39 @@ export function ClubSheet({ club, closing, onClose, onPay, onOpenSubscriptions, 
             </dd>
           </div>
         </dl>
+
+        {booked ? (
+          <p className="sheet-note is-booked">✓ Ви записані на цей клаб</p>
+        ) : pass ? (
+          <p className="sheet-note">
+            Ваш абонемент «{pass.title}»:{" "}
+            {sessionsLeft === null ? "безліміт" : `залишилось ${sessionsLeft}`} — цей запис буде
+            безкоштовним.
+          </p>
+        ) : null}
+
         <div className="sheet-actions">
-          <button
-            className="pay-btn primary"
-            type="button"
-            disabled={full}
-            onClick={() => onPay(club)}
-          >
-            {full ? (
-              <span>Немає місць</span>
-            ) : (
-              <>
-                <span>Записатись</span>
-                <em>{club.priceUah} ₴</em>
-              </>
-            )}
-          </button>
+          {booked ? (
+            <button
+              className="pay-btn danger"
+              type="button"
+              disabled={busy}
+              onClick={() => onCancel(bookedRegistrationId!)}
+            >
+              <span>{busy ? "Скасовуємо…" : "Скасувати запис"}</span>
+            </button>
+          ) : (
+            <button className="pay-btn primary" type="button" disabled={full || busy} onClick={() => onPay(club)}>
+              {full ? (
+                <span>Немає місць</span>
+              ) : (
+                <>
+                  <span>{busy ? "Записуємо…" : "Записатись"}</span>
+                  <em>{pass ? "за абонементом" : `${club.priceUah} ₴`}</em>
+                </>
+              )}
+            </button>
+          )}
           <button className="pay-btn secondary" type="button" onClick={onOpenSubscriptions}>
             <span>Абонемент</span>
             <em>від {minSubPrice} ₴</em>

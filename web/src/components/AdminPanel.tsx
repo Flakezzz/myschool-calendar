@@ -1,4 +1,5 @@
 import type { Club } from "../data/clubs";
+import { PeopleIcon } from "./Icons";
 
 type Props = {
   clubs: Club[];
@@ -8,9 +9,19 @@ type Props = {
   onAddNew: () => void;
   onEdit: (club: Club) => void;
   onDelete: (club: Club) => void;
+  onShowRegistrations: (club: Club) => void;
 };
 
-export function AdminPanel({ clubs, closing, error, onClose, onAddNew, onEdit, onDelete }: Props) {
+export function AdminPanel({
+  clubs,
+  closing,
+  error,
+  onClose,
+  onAddNew,
+  onEdit,
+  onDelete,
+  onShowRegistrations,
+}: Props) {
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
       <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
@@ -38,6 +49,14 @@ export function AdminPanel({ clubs, closing, error, onClose, onAddNew, onEdit, o
                 </span>
               </div>
               <div className="admin-row-actions">
+                <button
+                  type="button"
+                  className="icon-btn"
+                  onClick={() => onShowRegistrations(club)}
+                  aria-label="Хто записався"
+                >
+                  <PeopleIcon width={18} height={18} />
+                </button>
                 <button type="button" className="icon-btn" onClick={() => onEdit(club)} aria-label="Редагувати">
                   ✎
                 </button>

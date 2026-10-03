@@ -1,6 +1,8 @@
 type Props = {
+  heading?: string;
   title: string;
   subtitle: string;
+  note?: string;
   priceUah?: number;
   failed?: boolean;
   closing: boolean;
@@ -8,8 +10,10 @@ type Props = {
 };
 
 export function PaymentSuccessSheet({
+  heading,
   title,
   subtitle,
+  note,
   priceUah,
   failed = false,
   closing,
@@ -22,10 +26,11 @@ export function PaymentSuccessSheet({
         <div className={`success-icon${failed ? " is-failed" : ""}`} aria-hidden="true">
           {failed ? "!" : "✓"}
         </div>
-        <h2>{failed ? "Не вдалося записатися" : "Оплата успішна"}</h2>
+        <h2>{heading ?? (failed ? "Не вдалося записатися" : "Оплата успішна")}</h2>
         <p className="success-item">{title}</p>
         <p className="success-sub">{subtitle}</p>
         {priceUah !== undefined ? <p className="success-price">{priceUah} ₴</p> : null}
+        {note ? <p className="success-note">{note}</p> : null}
         <button type="button" className="pay-btn" onClick={onClose}>
           {failed ? "Зрозуміло" : "Готово"}
         </button>

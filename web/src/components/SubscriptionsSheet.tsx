@@ -2,12 +2,14 @@ import { Subscription } from "../data/subscriptions";
 
 type Props = {
   subscriptions: Subscription[];
+  /** Id of the plan currently being purchased, if any. */
+  busyId: string | null;
   closing: boolean;
   onClose: () => void;
   onBuy: (sub: Subscription) => void;
 };
 
-export function SubscriptionsSheet({ subscriptions, closing, onClose, onBuy }: Props) {
+export function SubscriptionsSheet({ subscriptions, busyId, closing, onClose, onBuy }: Props) {
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
       <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
@@ -28,8 +30,13 @@ export function SubscriptionsSheet({ subscriptions, closing, onClose, onBuy }: P
               </div>
               <p className="sub-sessions">{sub.sessions}</p>
               <p className="sub-desc">{sub.description}</p>
-              <button type="button" className="pay-btn" onClick={() => onBuy(sub)}>
-                Придбати
+              <button
+                type="button"
+                className="pay-btn"
+                disabled={busyId !== null}
+                onClick={() => onBuy(sub)}
+              >
+                {busyId === sub.id ? "Оформлюємо…" : "Придбати"}
               </button>
             </li>
           ))}

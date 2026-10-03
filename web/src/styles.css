@@ -129,6 +129,21 @@ a {
   overflow: hidden;
 }
 
+/* Positions .badge-dot inside the "Мої записи" button. */
+.theme-btn {
+  position: relative;
+}
+
+.badge-dot {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
 .theme-icon-stack {
   position: relative;
   width: 20px;
@@ -564,6 +579,152 @@ a {
 
 .pay-btn.secondary {
   background: var(--navy-dim);
+}
+
+.pay-btn.danger {
+  background: transparent;
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+}
+
+/* Short status line between the facts grid and the action buttons. */
+.sheet-note {
+  margin: -6px 0 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--sub-card-bg);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.sheet-note.is-booked {
+  color: var(--seat-color);
+  font-weight: 700;
+}
+
+.success-note {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.mine-section {
+  margin: 18px 0 0;
+}
+
+.mine-section h3 {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.mine-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.mine-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--card);
+}
+
+.mine-row .stripe {
+  width: 6px;
+  flex: none;
+}
+
+.mine-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 11px 12px;
+}
+
+.mine-row-info strong,
+.mine-row-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mine-row-info span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mine-row.is-past {
+  opacity: 0.55;
+}
+
+.mine-cancel-btn {
+  flex: none;
+  align-self: center;
+  margin-right: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mine-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pass-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: var(--sub-card-bg);
+  min-width: 0;
+}
+
+.pass-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pass-top strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pass-top em {
+  flex: none;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--seat-color);
+}
+
+.pass-meta {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
 }
 
 .sub-list {

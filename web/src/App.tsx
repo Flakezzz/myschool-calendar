@@ -5,24 +5,60 @@ import { AdminPanel } from "./components/AdminPanel";
 import { Calendar } from "./components/Calendar";
 import { ClubForm } from "./components/ClubForm";
 import { ClubList } from "./components/ClubList";
+import { ClubRegistrationsSheet } from "./components/ClubRegistrationsSheet";
 import { ClubSheet } from "./components/ClubSheet";
+import { GearIcon, TicketIcon } from "./components/Icons";
+import { MyBookingsSheet } from "./components/MyBookingsSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
 import { ThemeToggle } from "./components/ThemeToggle";
-import { deleteClub, saveClub } from "./lib/adminApi";
-import { formatDayTitle, isoDate, monthTitle } from "./lib/dates";
 import {
-  fetchAdminIds,
-  fetchClubs,
-  fetchSubscriptions,
-  purchaseSubscription,
-  registerForClub,
-} from "./lib/supabase";
+  ApiError,
+  bookClub,
+  buySubscription,
+  cancelBooking,
+  deleteClub,
+  fetchClubRegistrations,
+  fetchMine,
+  nextPass,
+  saveClub,
+  type ClubRegistration,
+  type Mine,
+  type MyBooking,
+} from "./lib/api";
+import { formatDayTitle, formatShortDate, isoDate, monthTitle } from "./lib/dates";
+import { fetchAdminIds, fetchClubs, fetchSubscriptions } from "./lib/supabase";
 import { confirmDialog, FALLBACK_ADMIN_IDS, getTelegramUserId, isAdmin } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
-type SuccessInfo = { title: string; subtitle: string; priceUah?: number; failed?: boolean };
+type SuccessInfo = {
+  heading?: string;
+  title: string;
+  subtitle: string;
+  note?: string;
+  priceUah?: number;
+  failed?: boolean;
+};
+
+const EMPTY_MINE: Mine = { bookings: [], passes: [] };
+
+// The database raises these on purpose; everything else is unexpected.
+const ERROR_TEXT: Record<string, string> = {
+  already_booked: "Ви вже записані на цей клаб.",
+  club_full: "На жаль, вільних місць уже немає.",
+  club_not_found: "Цього клабу вже не існує.",
+  club_already_started: "Клаб уже почався — скасувати запис не вийде.",
+  booking_not_found: "Запис не знайдено.",
+  subscription_not_found: "Цього абонемента вже не існує.",
+  unauthorized: "Відкрийте застосунок через Telegram.",
+  forbidden: "Немає доступу.",
+};
+
+function errorText(err: unknown): string {
+  const code = err instanceof ApiError ? err.code : "";
+  return ERROR_TEXT[code] ?? "Щось пішло не так. Спробуйте ще раз за хвилину.";
+}
 
 function blankClub(): Club {
   const now = new Date();
@@ -58,7 +94,36 @@ export function App() {
   const [adminIds, setAdminIds] = useState<string[]>(FALLBACK_ADMIN_IDS);
   const [loading, setLoading] = useState(true);
 
-  const reloadClubs = () => fetchClubs().then(setClubs).catch((err) => console.error("failed to load clubs", err));
+  // Outside Telegram there's no verified identity, so nothing can be booked
+  // — the app stays browsable as a demo.
+  const inTelegram = !!getTelegramUserId();
+
+  const [mine, setMine] = useState<Mine>(EMPTY_MINE);
+  const [mineLoading, setMineLoading] = useState(inTelegram);
+  const [mineError, setMineError] = useState<string | null>(null);
+  const [bookingsOpen, setBookingsOpen] = useState(false);
+  const [busyClubId, setBusyClubId] = useState<string | null>(null);
+  const [busySubId, setBusySubId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
+
+  const reloadClubs = () =>
+    fetchClubs()
+      .then(setClubs)
+      .catch((err) => console.error("failed to load clubs", err));
+
+  const reloadMine = async () => {
+    if (!inTelegram) return;
+    setMineLoading(true);
+    try {
+      setMine(await fetchMine());
+      setMineError(null);
+    } catch (err) {
+      console.error("failed to load bookings", err);
+      setMineError(errorText(err));
+    } finally {
+      setMineLoading(false);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -75,6 +140,8 @@ export function App() {
         if (ids.length) setAdminIds(ids);
       })
       .catch((err) => console.warn("failed to load admin ids", err));
+
+    reloadMine();
   }, []);
 
   const [shownClub, setShownClub] = useState<Club | null>(null);
@@ -88,6 +155,7 @@ export function App() {
   const clubPresence = usePresence(!!open);
   const subsPresence = usePresence(subsOpen);
   const successPresence = usePresence(!!success);
+  const bookingsPresence = usePresence(bookingsOpen);
 
   const [adminOpen, setAdminOpen] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
@@ -101,7 +169,25 @@ export function App() {
   }, [editingClub]);
   const formPresence = usePresence(!!editingClub);
 
-  useBodyScrollLock(clubPresence.rendered || subsPresence.rendered || successPresence.rendered || adminPresence.rendered || formPresence.rendered);
+  const [regsClub, setRegsClub] = useState<Club | null>(null);
+  const [regs, setRegs] = useState<ClubRegistration[]>([]);
+  const [regsLoading, setRegsLoading] = useState(false);
+  const [regsError, setRegsError] = useState<string | null>(null);
+  const [shownRegsClub, setShownRegsClub] = useState<Club | null>(null);
+  useEffect(() => {
+    if (regsClub) setShownRegsClub(regsClub);
+  }, [regsClub]);
+  const regsPresence = usePresence(!!regsClub);
+
+  useBodyScrollLock(
+    clubPresence.rendered ||
+      subsPresence.rendered ||
+      successPresence.rendered ||
+      bookingsPresence.rendered ||
+      adminPresence.rendered ||
+      formPresence.rendered ||
+      regsPresence.rendered,
+  );
 
   const shiftMonth = (delta: number) => {
     const d = new Date(year, month + delta, 1);
@@ -114,46 +200,97 @@ export function App() {
     [clubs, selected],
   );
 
-  const onPay = async (club: Club) => {
-    setOpen(null);
-    const telegramUserId = getTelegramUserId();
-
-    if (telegramUserId) {
-      try {
-        await registerForClub(club.id, telegramUserId);
-      } catch (err) {
-        // The database enforces capacity, so this is a real rejection —
-        // never show a success screen for a booking that didn't happen.
-        const isFull = String(err).includes("club_full");
-        setSuccess({
-          title: club.title,
-          subtitle: isFull
-            ? "На жаль, вільних місць уже немає."
-            : "Спробуйте ще раз за хвилину.",
-          failed: true,
-        });
-        reloadClubs();
-        return;
-      }
-      reloadClubs();
+  const bookingByClubId = useMemo(() => {
+    const map = new Map<string, MyBooking>();
+    for (const booking of mine.bookings) {
+      if (booking.club) map.set(booking.club.id, booking);
     }
+    return map;
+  }, [mine.bookings]);
 
+  const usablePass = useMemo(() => nextPass(mine.passes), [mine.passes]);
+
+  const demoNotice = (title: string) => {
+    setOpen(null);
+    setSubsOpen(false);
     setSuccess({
-      title: club.title,
-      subtitle: `${club.date} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-      priceUah: club.priceUah,
+      heading: "Демо-режим",
+      title,
+      subtitle: "Відкрийте застосунок у Telegram, щоб записатись.",
+      failed: true,
     });
   };
 
-  const onBuySub = (sub: Subscription) => {
-    setSubsOpen(false);
-    const telegramUserId = getTelegramUserId();
-    if (telegramUserId) {
-      purchaseSubscription(sub.id, telegramUserId).catch((err) =>
-        console.warn("subscription purchase failed", err),
-      );
+  const onPay = async (club: Club) => {
+    if (!inTelegram) return demoNotice(club.title);
+
+    setBusyClubId(club.id);
+    try {
+      const result = await bookClub(club.id);
+      setOpen(null);
+      setSuccess({
+        heading: result.paidWith === "subscription" ? "Записано за абонементом" : "Оплата успішна",
+        title: club.title,
+        subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
+        priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
+        note:
+          result.paidWith === "subscription" && result.sessionsLeft !== null
+            ? `Залишилось відвідувань: ${result.sessionsLeft}`
+            : undefined,
+      });
+    } catch (err) {
+      // The database enforces capacity and the one-booking-per-club rule, so
+      // this is a real rejection — never show a success screen for a booking
+      // that didn't happen.
+      setOpen(null);
+      setSuccess({ title: club.title, subtitle: errorText(err), failed: true });
+    } finally {
+      setBusyClubId(null);
+      await Promise.all([reloadClubs(), reloadMine()]);
     }
-    setSuccess({ title: sub.title, subtitle: sub.sessions, priceUah: sub.priceUah });
+  };
+
+  const onCancelBooking = async (registrationId: string, title: string) => {
+    const confirmed = await confirmDialog(`Скасувати запис на «${title}»?`);
+    if (!confirmed) return;
+
+    setCancellingId(registrationId);
+    try {
+      await cancelBooking(registrationId);
+      setOpen(null);
+      setSuccess({
+        heading: "Запис скасовано",
+        title,
+        subtitle: "Місце звільнено. Якщо ви платили абонементом, відвідування повернулось.",
+      });
+    } catch (err) {
+      setSuccess({ heading: "Не вдалося скасувати", title, subtitle: errorText(err), failed: true });
+    } finally {
+      setCancellingId(null);
+      await Promise.all([reloadClubs(), reloadMine()]);
+    }
+  };
+
+  const onBuySub = async (sub: Subscription) => {
+    if (!inTelegram) return demoNotice(sub.title);
+
+    setBusySubId(sub.id);
+    try {
+      await buySubscription(sub.id);
+      setSubsOpen(false);
+      setSuccess({
+        title: sub.title,
+        subtitle: sub.sessions,
+        priceUah: sub.priceUah,
+        note: "Абонемент активний — наступні записи на клаби будуть безкоштовними.",
+      });
+    } catch (err) {
+      setSubsOpen(false);
+      setSuccess({ title: sub.title, subtitle: errorText(err), failed: true });
+    } finally {
+      setBusySubId(null);
+      await reloadMine();
+    }
   };
 
   const onOpenSubscriptions = () => {
@@ -180,9 +317,23 @@ export function App() {
     setAdminError(null);
     try {
       await deleteClub(club.id);
-      await reloadClubs();
+      await Promise.all([reloadClubs(), reloadMine()]);
     } catch (err) {
-      setAdminError(String(err));
+      setAdminError(errorText(err));
+    }
+  };
+
+  const onShowRegistrations = async (club: Club) => {
+    setRegs([]);
+    setRegsError(null);
+    setRegsLoading(true);
+    setRegsClub(club);
+    try {
+      setRegs(await fetchClubRegistrations(club.id));
+    } catch (err) {
+      setRegsError(errorText(err));
+    } finally {
+      setRegsLoading(false);
     }
   };
 
@@ -194,7 +345,7 @@ export function App() {
       setEditingClub(null);
       await reloadClubs();
     } catch (err) {
-      setAdminError(String(err));
+      setAdminError(errorText(err));
     } finally {
       setAdminSaving(false);
     }
@@ -209,11 +360,22 @@ export function App() {
             {isAdmin(adminIds) ? (
               <button
                 type="button"
-                className="theme-btn admin-btn"
+                className="theme-btn"
                 onClick={() => setAdminOpen(true)}
                 aria-label="Адмін-панель"
               >
-                ⚙
+                <GearIcon width={20} height={20} />
+              </button>
+            ) : null}
+            {inTelegram ? (
+              <button
+                type="button"
+                className="theme-btn"
+                onClick={() => setBookingsOpen(true)}
+                aria-label="Мої записи"
+              >
+                <TicketIcon width={20} height={20} />
+                {mine.bookings.length ? <i className="badge-dot" /> : null}
               </button>
             ) : null}
             <ThemeToggle />
@@ -256,8 +418,12 @@ export function App() {
         <ClubSheet
           club={shownClub}
           closing={clubPresence.closing}
+          bookedRegistrationId={bookingByClubId.get(shownClub.id)?.id ?? null}
+          pass={usablePass}
+          busy={busyClubId === shownClub.id || cancellingId !== null}
           onClose={() => setOpen(null)}
           onPay={onPay}
+          onCancel={(registrationId) => onCancelBooking(registrationId, shownClub.title)}
           onOpenSubscriptions={onOpenSubscriptions}
           minSubPrice={subscriptions.length ? Math.min(...subscriptions.map((s) => s.priceUah)) : 0}
         />
@@ -265,19 +431,22 @@ export function App() {
       {subsPresence.rendered ? (
         <SubscriptionsSheet
           subscriptions={subscriptions}
+          busyId={busySubId}
           closing={subsPresence.closing}
           onClose={() => setSubsOpen(false)}
           onBuy={onBuySub}
         />
       ) : null}
-      {successPresence.rendered && shownSuccess ? (
-        <PaymentSuccessSheet
-          title={shownSuccess.title}
-          subtitle={shownSuccess.subtitle}
-          priceUah={shownSuccess.priceUah}
-          failed={shownSuccess.failed}
-          closing={successPresence.closing}
-          onClose={() => setSuccess(null)}
+      {bookingsPresence.rendered ? (
+        <MyBookingsSheet
+          bookings={mine.bookings}
+          passes={mine.passes}
+          loading={mineLoading}
+          error={mineError}
+          cancellingId={cancellingId}
+          closing={bookingsPresence.closing}
+          onClose={() => setBookingsOpen(false)}
+          onCancel={(booking) => onCancelBooking(booking.id, booking.club?.title ?? "")}
         />
       ) : null}
       {adminPresence.rendered ? (
@@ -289,6 +458,17 @@ export function App() {
           onAddNew={onAdminAddNew}
           onEdit={onAdminEdit}
           onDelete={onAdminDelete}
+          onShowRegistrations={onShowRegistrations}
+        />
+      ) : null}
+      {regsPresence.rendered && shownRegsClub ? (
+        <ClubRegistrationsSheet
+          club={shownRegsClub}
+          registrations={regs}
+          loading={regsLoading}
+          error={regsError}
+          closing={regsPresence.closing}
+          onClose={() => setRegsClub(null)}
         />
       ) : null}
       {formPresence.rendered && shownEditingClub ? (
@@ -300,6 +480,18 @@ export function App() {
           error={adminError}
           onClose={() => setEditingClub(null)}
           onSave={onSaveClub}
+        />
+      ) : null}
+      {successPresence.rendered && shownSuccess ? (
+        <PaymentSuccessSheet
+          heading={shownSuccess.heading}
+          title={shownSuccess.title}
+          subtitle={shownSuccess.subtitle}
+          note={shownSuccess.note}
+          priceUah={shownSuccess.priceUah}
+          failed={shownSuccess.failed}
+          closing={successPresence.closing}
+          onClose={() => setSuccess(null)}
         />
       ) : null}
     </main>

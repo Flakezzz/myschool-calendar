@@ -7,7 +7,8 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
 
 // The anon key is meant to be public — it ships inside this bundle. Access
 // control is enforced by Postgres Row Level Security policies, not secrecy
-// of this key. See supabase/schema.sql.
+// of this key: it can only read the club/subscription catalogue. See
+// supabase/schema.sql and supabase/lock-down-writes.sql.
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 function fromClubRow(row: any): Club {
@@ -66,16 +67,6 @@ export async function fetchAdminIds(): Promise<string[]> {
     .filter(Boolean);
 }
 
-export async function registerForClub(clubId: string, telegramUserId: string) {
-  const { error } = await supabase
-    .from("registrations")
-    .insert({ type: "club", club_id: clubId, telegram_user_id: telegramUserId });
-  if (error) throw error;
-}
-
-export async function purchaseSubscription(subscriptionId: string, telegramUserId: string) {
-  const { error } = await supabase
-    .from("registrations")
-    .insert({ type: "subscription", subscription_id: subscriptionId, telegram_user_id: telegramUserId });
-  if (error) throw error;
-}
+// Bookings and purchases are NOT written from here. They go through the
+// admin-write Edge Function (see lib/api.ts), which verifies Telegram's
+// signature first — the browser could otherwise claim any Telegram id.
