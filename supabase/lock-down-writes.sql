@@ -23,10 +23,11 @@
 drop policy if exists "public insert registrations" on registrations;
 
 -- ================================================================ VERIFY
--- Expect exactly three rows, all cmd = SELECT: "public read clubs",
--- "public read subscriptions" and "public read admin ids". Any
--- INSERT/UPDATE/DELETE policy listed here would be a way to write data
--- without going through the Edge Function.
+-- Expect exactly two rows, both cmd = SELECT: "public read clubs" and
+-- "public read subscriptions". (app_config used to appear here too, until
+-- hide-admin-list.sql removed its public policy.) Any INSERT/UPDATE/DELETE
+-- policy listed here would be a way to write data without going through
+-- the Edge Function.
 select tablename, policyname, cmd
 from pg_policies
 where schemaname = 'public'

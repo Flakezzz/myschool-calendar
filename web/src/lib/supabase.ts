@@ -50,22 +50,10 @@ export async function fetchSubscriptions(): Promise<Subscription[]> {
   return data.map(fromSubscriptionRow);
 }
 
-/** Admin Telegram IDs, read at runtime from app_config so adding an admin
- * is a single database change rather than a code rebuild. Only gates whether
- * the admin UI is shown — actual write access is enforced by the
- * admin-write Edge Function. */
-export async function fetchAdminIds(): Promise<string[]> {
-  const { data, error } = await supabase
-    .from("app_config")
-    .select("value")
-    .eq("key", "admin_telegram_ids")
-    .maybeSingle();
-  if (error) throw error;
-  return (data?.value ?? "")
-    .split(",")
-    .map((s: string) => s.trim())
-    .filter(Boolean);
-}
+// The admin list is NOT read from here. Asking the database for it with
+// the public anon key published every admin's Telegram id to anyone who
+// looked. The app now asks the Edge Function about the current user only
+// (see fetchIsAdmin in lib/api.ts).
 
 // Bookings and purchases are NOT written from here. They go through the
 // admin-write Edge Function (see lib/api.ts), which verifies Telegram's

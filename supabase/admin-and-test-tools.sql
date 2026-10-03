@@ -2,23 +2,19 @@
 -- Safe to re-run. No bot token needed in this file.
 
 -- ================================================================ PART 1
--- Make app_config.admin_telegram_ids readable by the app, so the admin
--- list has ONE home (this table) instead of being duplicated into the
--- Edge Function secret and the web build. Only this one key is exposed —
--- it isn't a secret (real authorization happens server-side in the
--- admin-write Edge Function, which verifies Telegram's signature).
-drop policy if exists "public read admin ids" on app_config;
-create policy "public read admin ids" on app_config
-  for select using (key = 'admin_telegram_ids');
-
--- ---------------------------------------------------------------------
--- TO ADD MORE ADMINS: put every Telegram ID here, comma-separated, no
--- spaces needed. This one line is now the only place you change.
--- Keep this value current — re-running the file writes it back over
--- whatever is in the database.
-update app_config
-set value = '777037876,526386894'
-where key = 'admin_telegram_ids';
+-- The admin list lives in app_config and is NOT readable by the public —
+-- see hide-admin-list.sql for why. The app asks the Edge Function
+-- "am I an admin?" instead of fetching the list.
+--
+-- TO ADD OR REMOVE AN ADMIN: uncomment the statement below, put every
+-- Telegram ID in it comma-separated, and run just that statement. It is
+-- commented out on purpose: it overwrites whatever is in the database,
+-- and running this whole file by accident used to silently wipe the
+-- second admin.
+--
+-- update app_config
+-- set value = '777037876,526386894'
+-- where key = 'admin_telegram_ids';
 
 -- Check who's an admin right now:
 select value as admin_telegram_ids from app_config where key = 'admin_telegram_ids';

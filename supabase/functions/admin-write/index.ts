@@ -32,7 +32,7 @@ const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-type TelegramUser = { id: string; firstName: string; username: string };
+type TelegramUser = { id: string; firstName: string; username: string; ageSeconds: number };
 
 /** The admin list lives in app_config so it can be changed with one SQL
  * update rather than a redeploy. Falls back to the ADMIN_TELEGRAM_IDS
@@ -68,9 +68,23 @@ function toHex(bytes: Uint8Array): string {
 }
 
 // A signed initData string stays cryptographically valid forever, so
-// without this window a copy captured once (a screenshot, a log, a shared
-// debugging session) would grant permanent write access on replay.
+// without a window a copy captured once (a screenshot, a log, a shared
+// debugging session) would grant permanent access on replay.
+//
+// Admin writes get a much shorter window than ordinary use: a leaked
+// admin session can create and delete clubs, while a leaked ordinary one
+// can only manage that person's own bookings.
 const MAX_INIT_DATA_AGE_SECONDS = 24 * 60 * 60;
+const MAX_ADMIN_INIT_DATA_AGE_SECONDS = 60 * 60;
+
+/** Compares every character before returning, so how long this takes
+ * doesn't reveal how much of the hash was correct. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 // https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
 async function verifyInitData(initData: string): Promise<TelegramUser | null> {
@@ -86,7 +100,7 @@ async function verifyInitData(initData: string): Promise<TelegramUser | null> {
 
   const secretKey = await hmacSha256(new TextEncoder().encode("WebAppData"), BOT_TOKEN);
   const computedHash = toHex(await hmacSha256(secretKey, dataCheckString));
-  if (computedHash !== hash) return null;
+  if (!timingSafeEqual(computedHash, hash)) return null;
 
   const authDate = Number(params.get("auth_date"));
   if (!authDate) return null;
@@ -105,6 +119,7 @@ async function verifyInitData(initData: string): Promise<TelegramUser | null> {
     id: String(user.id),
     firstName: firstName || "",
     username: user.username ? String(user.username) : "",
+    ageSeconds,
   };
 }
 
@@ -150,6 +165,21 @@ function describe(err: unknown): string {
     }
   }
   return String(err);
+}
+
+const CLUB_COLUMNS = [
+  "id", "title", "description", "date", "start_time", "end_time",
+  "teacher", "level", "seats", "price_uah", "color",
+];
+const SUBSCRIPTION_COLUMNS = [
+  "id", "title", "sessions", "description", "price_uah",
+  "sessions_count", "days_valid",
+];
+
+function pick(row: Record<string, unknown>, allowed: string[]): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const key of allowed) if (key in row) out[key] = row[key];
+  return out;
 }
 
 /** Calls one of the SQL functions from supabase/bookings.sql, translating
@@ -223,11 +253,26 @@ Deno.serve(async (req) => {
         if (passes.error) throw passes.error;
         return json({ ok: true, bookings: bookings.data, passes: passes.data });
       }
+
+      case "am_i_admin": {
+        // Answers only about the caller. The app used to read the whole
+        // admin list from app_config with the public key, which published
+        // both admins' Telegram ids to anyone who looked.
+        const ids = await getAdminIds();
+        return json({ ok: true, isAdmin: ids.includes(user.id) });
+      }
     }
 
     // ---------------------------------------------------- admin-only below
     const adminIds = await getAdminIds();
     if (!adminIds.includes(user.id)) return json({ error: "forbidden" }, 403);
+
+    // A leaked admin session is worth far more than an ordinary one, so it
+    // expires sooner. Reopening the app refreshes it, so this is invisible
+    // in normal use.
+    if (user.ageSeconds > MAX_ADMIN_INIT_DATA_AGE_SECONDS) {
+      return json({ error: "admin_session_expired" }, 401);
+    }
 
     if (action === "club_registrations") {
       if (!body.clubId) return json({ error: "bad_payload" }, 400);
@@ -246,7 +291,15 @@ Deno.serve(async (req) => {
     }
 
     if (action === "upsert") {
-      const { error } = await supabase.from(table).upsert(body);
+      // Whatever JSON arrived used to be written straight through, so an
+      // admin could set any column — including clubs.taken, desyncing the
+      // seat counter from the real bookings. `taken` is deliberately NOT
+      // writable: the database owns it (see the triggers in bookings.sql),
+      // and leaving it out of the payload keeps it untouched on update and
+      // at its default of 0 on insert.
+      const row = pick(body, table === "clubs" ? CLUB_COLUMNS : SUBSCRIPTION_COLUMNS);
+      if (!row.id) return json({ error: "bad_payload" }, 400);
+      const { error } = await supabase.from(table).upsert(row);
       if (error) throw error;
     } else if (action === "delete") {
       const { error } = await supabase.from(table).delete().eq("id", body.id);

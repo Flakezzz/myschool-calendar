@@ -24,17 +24,19 @@ export function getTelegramInitData(): string {
   return window.Telegram?.WebApp?.initData ?? "";
 }
 
-/** Fallback only — used if app_config can't be read. The live list comes
- * from the database (see fetchAdminIds), so adding an admin doesn't need
- * a rebuild. */
-export const FALLBACK_ADMIN_IDS = (import.meta.env.VITE_ADMIN_TELEGRAM_IDS ?? "")
+/** Fallback only, used if the server-side admin check can't be reached.
+ * The real list lives in the database and is never sent to the browser —
+ * the Edge Function answers "are YOU an admin?" and nothing more. This
+ * only decides whether the admin button is drawn; every admin write is
+ * verified server-side regardless. */
+const FALLBACK_ADMIN_IDS = (import.meta.env.VITE_ADMIN_TELEGRAM_IDS ?? "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
 
-export function isAdmin(adminIds: string[]): boolean {
+export function isFallbackAdmin(): boolean {
   const id = getTelegramUserId();
-  return !!id && adminIds.includes(id);
+  return !!id && FALLBACK_ADMIN_IDS.includes(id);
 }
 
 export function confirmDialog(message: string): Promise<boolean> {

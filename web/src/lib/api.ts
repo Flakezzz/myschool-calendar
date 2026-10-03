@@ -27,7 +27,8 @@ type Action =
   | "book_club"
   | "buy_subscription"
   | "cancel_booking"
-  | "my_bookings";
+  | "my_bookings"
+  | "am_i_admin";
 
 async function call(action: Action, payload: unknown, table?: "clubs" | "subscriptions"): Promise<any> {
   // Supabase's gateway requires a valid JWT in Authorization before a
@@ -60,7 +61,8 @@ function toClubRow(club: Club) {
     teacher: club.teacher,
     level: club.level,
     seats: club.seats,
-    taken: club.taken,
+    // taken is owned by the database triggers — sending it would let a
+    // stale value from the form overwrite the real booking count.
     price_uah: club.priceUah,
     color: club.color,
   };
@@ -81,6 +83,14 @@ export const deleteClub = (id: string) => call("delete", { id }, "clubs");
 
 export const saveSubscription = (sub: Subscription) => call("upsert", toSubscriptionRow(sub), "subscriptions");
 export const deleteSubscription = (id: string) => call("delete", { id }, "subscriptions");
+
+/** Asks the server whether the current Telegram user is an admin. The app
+ * used to fetch the whole admin list from the database with the public
+ * key, which exposed every admin's Telegram id to anyone. */
+export async function fetchIsAdmin(): Promise<boolean> {
+  const data = await call("am_i_admin", {});
+  return !!data.isAdmin;
+}
 
 // --------------------------------------------------------- admin: who booked
 

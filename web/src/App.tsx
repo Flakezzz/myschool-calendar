@@ -19,6 +19,7 @@ import {
   cancelBooking,
   deleteClub,
   fetchClubRegistrations,
+  fetchIsAdmin,
   fetchMine,
   nextPass,
   saveClub,
@@ -27,8 +28,8 @@ import {
   type MyBooking,
 } from "./lib/api";
 import { formatDayTitle, formatShortDate, isoDate, monthTitle } from "./lib/dates";
-import { fetchAdminIds, fetchClubs, fetchSubscriptions } from "./lib/supabase";
-import { confirmDialog, FALLBACK_ADMIN_IDS, getTelegramUserId, isAdmin } from "./lib/telegram";
+import { fetchClubs, fetchSubscriptions } from "./lib/supabase";
+import { confirmDialog, getTelegramUserId, isFallbackAdmin } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
@@ -54,6 +55,7 @@ const ERROR_TEXT: Record<string, string> = {
   already_has_pass: "У вас уже є активний абонемент. Новий можна придбати, коли цей закінчиться.",
   unauthorized: "Відкрийте застосунок через Telegram.",
   forbidden: "Немає доступу.",
+  admin_session_expired: "Сесія адміна застаріла. Закрийте застосунок і відкрийте знову.",
 };
 
 function errorText(err: unknown): string {
@@ -92,7 +94,7 @@ export function App() {
 
   const [clubs, setClubs] = useState<Club[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [adminIds, setAdminIds] = useState<string[]>(FALLBACK_ADMIN_IDS);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Outside Telegram there's no verified identity, so nothing can be booked
@@ -134,13 +136,17 @@ export function App() {
       .catch((err) => console.error("failed to load data", err))
       .finally(() => setLoading(false));
 
-    // Keeps the build-time fallback if this fails, so the admin button
-    // doesn't disappear just because the config row is unreadable.
-    fetchAdminIds()
-      .then((ids) => {
-        if (ids.length) setAdminIds(ids);
-      })
-      .catch((err) => console.warn("failed to load admin ids", err));
+    // Asks the server only about this user, so the admin list is never
+    // published. On failure, fall back to the build-time list so the admin
+    // button doesn't vanish because of one flaky request.
+    if (inTelegram) {
+      fetchIsAdmin()
+        .then(setIsAdmin)
+        .catch((err) => {
+          console.warn("admin check failed, using build-time list", err);
+          setIsAdmin(isFallbackAdmin());
+        });
+    }
 
     reloadMine();
   }, []);
@@ -358,7 +364,7 @@ export function App() {
         <div className="top-row">
           <p className="eyebrow">English School</p>
           <div className="top-row-actions">
-            {isAdmin(adminIds) ? (
+            {isAdmin ? (
               <button
                 type="button"
                 className="theme-btn admin-btn"
