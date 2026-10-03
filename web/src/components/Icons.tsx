@@ -1,19 +1,5 @@
 import type { SVGProps } from "react";
 
-export function GearIcon(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M12 2.75h0a1.5 1.5 0 0 1 1.5 1.5v.3a1.5 1.5 0 0 0 2.25 1.3l.26-.15a1.5 1.5 0 0 1 2.05.55l.3.52a1.5 1.5 0 0 1-.55 2.05l-.26.15a1.5 1.5 0 0 0 0 2.6l.26.15a1.5 1.5 0 0 1 .55 2.05l-.3.52a1.5 1.5 0 0 1-2.05.55l-.26-.15a1.5 1.5 0 0 0-2.25 1.3v.3a1.5 1.5 0 0 1-1.5 1.5h-.6a1.5 1.5 0 0 1-1.5-1.5v-.3a1.5 1.5 0 0 0-2.25-1.3l-.26.15a1.5 1.5 0 0 1-2.05-.55l-.3-.52a1.5 1.5 0 0 1 .55-2.05l.26-.15a1.5 1.5 0 0 0 0-2.6l-.26-.15a1.5 1.5 0 0 1-.55-2.05l.3-.52a1.5 1.5 0 0 1 2.05-.55l.26.15A1.5 1.5 0 0 0 9.9 4.55v-.3a1.5 1.5 0 0 1 1.5-1.5h.6Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
 export function TicketIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>

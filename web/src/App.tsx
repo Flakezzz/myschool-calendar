@@ -7,7 +7,7 @@ import { ClubForm } from "./components/ClubForm";
 import { ClubList } from "./components/ClubList";
 import { ClubRegistrationsSheet } from "./components/ClubRegistrationsSheet";
 import { ClubSheet } from "./components/ClubSheet";
-import { GearIcon, TicketIcon } from "./components/Icons";
+import { TicketIcon } from "./components/Icons";
 import { MyBookingsSheet } from "./components/MyBookingsSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
@@ -360,11 +360,11 @@ export function App() {
             {isAdmin(adminIds) ? (
               <button
                 type="button"
-                className="theme-btn"
+                className="theme-btn admin-btn"
                 onClick={() => setAdminOpen(true)}
                 aria-label="Адмін-панель"
               >
-                <GearIcon width={20} height={20} />
+                ⚙
               </button>
             ) : null}
             {inTelegram ? (
