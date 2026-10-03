@@ -601,9 +601,9 @@ a {
   color: var(--accent);
 }
 
-/* Short status line between the facts grid and the action buttons. */
+/* Short status line, used both under the facts grid and under a header. */
 .sheet-note {
-  margin: -6px 0 14px;
+  margin: 16px 0 14px;
   padding: 10px 12px;
   border-radius: 12px;
   background: var(--sub-card-bg);
@@ -611,6 +611,10 @@ a {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.4;
+}
+
+.sheet-note strong {
+  color: var(--ink);
 }
 
 .sheet-note.is-booked {

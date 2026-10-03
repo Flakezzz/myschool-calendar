@@ -51,6 +51,7 @@ const ERROR_TEXT: Record<string, string> = {
   club_already_started: "Клаб уже почався — скасувати запис не вийде.",
   booking_not_found: "Запис не знайдено.",
   subscription_not_found: "Цього абонемента вже не існує.",
+  already_has_pass: "У вас уже є активний абонемент. Новий можна придбати, коли цей закінчиться.",
   unauthorized: "Відкрийте застосунок через Telegram.",
   forbidden: "Немає доступу.",
 };
@@ -381,7 +382,7 @@ export function App() {
             <ThemeToggle />
           </div>
         </div>
-        <h1>Календар клабів</h1>
+        <h1>Clubs</h1>
         <div className="month-nav">
           <button type="button" onClick={() => shiftMonth(-1)} aria-label="Попередній місяць">
             ‹
@@ -431,6 +432,7 @@ export function App() {
       {subsPresence.rendered ? (
         <SubscriptionsSheet
           subscriptions={subscriptions}
+          activePass={usablePass}
           busyId={busySubId}
           closing={subsPresence.closing}
           onClose={() => setSubsOpen(false)}

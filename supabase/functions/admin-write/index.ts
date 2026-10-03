@@ -129,6 +129,7 @@ const KNOWN_DB_ERRORS = [
   "club_already_started",
   "booking_not_found",
   "subscription_not_found",
+  "already_has_pass",
 ];
 
 function dbErrorCode(message: string): string | null {
