@@ -9,3 +9,4 @@ server/dist
 web/tsconfig.tsbuildinfo
 .claude
 server/data
+supabase/.temp
