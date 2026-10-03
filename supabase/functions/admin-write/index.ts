@@ -302,6 +302,11 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from(table).upsert(row);
       if (error) throw error;
     } else if (action === "delete") {
+      // Without this, a payload missing `id` filtered on the string
+      // "undefined": it matched nothing, so nothing was lost, but the
+      // function still answered {ok:true} and the UI would report a
+      // successful delete that never happened.
+      if (!body.id) return json({ error: "bad_payload" }, 400);
       const { error } = await supabase.from(table).delete().eq("id", body.id);
       if (error) throw error;
     } else {
