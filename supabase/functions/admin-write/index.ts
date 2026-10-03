@@ -136,12 +136,28 @@ function dbErrorCode(message: string): string | null {
   return KNOWN_DB_ERRORS.find((code) => message.includes(code)) ?? null;
 }
 
+/** Supabase errors are plain objects, so String(err) on one gives the
+ * useless "[object Object]". Dig out the message. */
+function describe(err: unknown): string {
+  if (typeof err === "object" && err !== null) {
+    const e = err as { message?: unknown; details?: unknown };
+    if (typeof e.message === "string") return e.message;
+    if (typeof e.details === "string") return e.details;
+    try {
+      return JSON.stringify(err);
+    } catch {
+      // fall through
+    }
+  }
+  return String(err);
+}
+
 /** Calls one of the SQL functions from supabase/bookings.sql, translating
  * its intentional exceptions into a code the UI can branch on. */
 async function rpc(name: string, args: Record<string, unknown>): Promise<Response> {
   const { data, error } = await supabase.rpc(name, args);
   if (error) {
-    const code = dbErrorCode(error.message ?? "");
+    const code = dbErrorCode(describe(error));
     if (code) return json({ error: code }, 409);
     throw error;
   }
@@ -241,6 +257,6 @@ Deno.serve(async (req) => {
 
     return json({ ok: true });
   } catch (err) {
-    return json({ error: String(err) }, 500);
+    return json({ error: describe(err) }, 500);
   }
 });
