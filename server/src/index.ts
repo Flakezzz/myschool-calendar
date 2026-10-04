@@ -1,10 +1,21 @@
+// Minimal Express app, kept only for the future Monobank payment webhook.
+//
+// The Telegram bot no longer lives here. /start used to be handled by a
+// grammy long-polling loop in this process, which meant the bot only
+// worked while this server was running. It now runs as a Supabase Edge
+// Function webhook (supabase/functions/telegram-bot), online 24/7 with no
+// server — so the bot was removed from here. Running long polling now
+// would also 409-conflict with the registered webhook.
+//
+// Nothing in the app depends on this process today: the Mini App talks to
+// Supabase directly, and reminders/notifications run in Postgres. This
+// exists so the Monobank webhook has a home when that work starts; it can
+// just as well become another Edge Function instead.
+
 import cors from "cors";
 import express from "express";
-import { Bot, InlineKeyboard } from "grammy";
 
 const PORT = Number(process.env.PORT ?? 3000);
-const BOT_TOKEN = process.env.BOT_TOKEN ?? "";
-const WEBAPP_URL = process.env.WEBAPP_URL ?? "http://127.0.0.1:5173";
 
 const app = express();
 app.use(cors());
@@ -16,8 +27,7 @@ app.get("/api/health", (_req, res) => {
 
 app.post("/api/payments/mono/webhook", (req, res) => {
   // Verify X-Sign, then mark the registration paid. Not wired up yet —
-  // Monobank integration is deferred; payment is simulated client-side
-  // for now (see web/src/lib/supabase.ts).
+  // Monobank integration is deferred; payment is simulated for now.
   console.log("mono webhook", req.body);
   res.sendStatus(200);
 });
@@ -25,14 +35,3 @@ app.post("/api/payments/mono/webhook", (req, res) => {
 app.listen(PORT, () => {
   console.log(`api on :${PORT}`);
 });
-
-const bot = BOT_TOKEN ? new Bot(BOT_TOKEN) : null;
-if (bot) {
-  bot.command("start", async (ctx) => {
-    const keyboard = new InlineKeyboard().webApp("Відкрити календар", WEBAPP_URL);
-    await ctx.reply("Календар клабів школи. Оберіть дату й зареєструйтесь.", {
-      reply_markup: keyboard,
-    });
-  });
-  bot.start();
-}
