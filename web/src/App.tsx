@@ -215,6 +215,15 @@ export function App() {
     return map;
   }, [mine.bookings]);
 
+  // Days the person already holds a booking on — the calendar outlines them.
+  const bookedDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const booking of mine.bookings) {
+      if (booking.club) dates.add(booking.club.date);
+    }
+    return dates;
+  }, [mine.bookings]);
+
   const usablePass = useMemo(() => nextPass(mine.passes), [mine.passes]);
 
   const demoNotice = (title: string) => {
@@ -362,7 +371,7 @@ export function App() {
     <main className="app">
       <header className="top">
         <div className="top-row">
-          <p className="eyebrow">English School</p>
+          <p className="eyebrow">MySchool</p>
           <div className="top-row-actions">
             {isAdmin ? (
               <button
@@ -405,6 +414,7 @@ export function App() {
         month={month}
         selected={selected}
         clubs={clubs}
+        bookedDates={bookedDates}
         onSelect={setSelected}
       />
 

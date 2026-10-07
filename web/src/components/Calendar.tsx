@@ -6,10 +6,11 @@ type Props = {
   month: number;
   selected: string;
   clubs: Club[];
+  bookedDates: Set<string>;
   onSelect: (iso: string) => void;
 };
 
-export function Calendar({ year, month, selected, clubs, onSelect }: Props) {
+export function Calendar({ year, month, selected, clubs, bookedDates, onSelect }: Props) {
   const offset = startOffset(year, month);
   const total = daysInMonth(year, month);
   const cells = Array.from({ length: offset + total }, (_, i) =>
@@ -18,10 +19,12 @@ export function Calendar({ year, month, selected, clubs, onSelect }: Props) {
   const today = new Date();
   const todayIso = isoDate(today.getFullYear(), today.getMonth(), today.getDate());
 
+  // One dot per club, not per distinct colour: three clubs that happen to share
+  // two colours must still show three dots.
   const colorsByDay = new Map<string, string[]>();
   for (const club of clubs) {
     const list = colorsByDay.get(club.date) ?? [];
-    if (!list.includes(club.color)) list.push(club.color);
+    list.push(club.color);
     colorsByDay.set(club.date, list);
   }
 
@@ -39,17 +42,20 @@ export function Calendar({ year, month, selected, clubs, onSelect }: Props) {
           const dots = colorsByDay.get(iso) ?? [];
           const isSelected = iso === selected;
           const isToday = iso === todayIso;
+          const isBooked = bookedDates.has(iso);
           return (
             <button
               key={iso}
-              className={`cell${isSelected ? " selected" : ""}${isToday ? " today" : ""}`}
+              className={`cell${isSelected ? " selected" : ""}${isToday ? " today" : ""}${
+                isBooked ? " booked" : ""
+              }`}
               onClick={() => onSelect(iso)}
               type="button"
             >
               <span className="num">{day}</span>
               <span className="dots">
-                {dots.slice(0, 3).map((c) => (
-                  <i key={c} style={{ background: c }} />
+                {dots.slice(0, 3).map((c, i) => (
+                  <i key={i} style={{ background: c }} />
                 ))}
               </span>
             </button>
