@@ -56,6 +56,9 @@ export function ClubSheet({
     el.style.height = "auto";
     const natural = el.scrollHeight;
     el.style.height = previous;
+    // Flush the restored value so the transition has a real starting point;
+    // without this the browser can coalesce both writes and skip the animation.
+    void el.offsetHeight;
     setHeight(Math.min(natural, cap));
   };
 
@@ -70,7 +73,7 @@ export function ClubSheet({
   }, [expanded]);
 
   // Re-measure whenever what is inside changes, and when the window does.
-  useLayoutEffect(measure, [expanded, showVideo, club.id]);
+  useLayoutEffect(measure, [expanded, club.id]);
 
   useEffect(() => {
     window.addEventListener("resize", measure);
@@ -172,8 +175,10 @@ export function ClubSheet({
           </div>
         </dl>
 
-        {expanded && showVideo && club.videoUrl ? (
-          <ClubVideo url={club.videoUrl} title={club.title} />
+        {expanded && club.videoUrl ? (
+          <div className="club-video">
+            {showVideo ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
+          </div>
         ) : null}
 
         {booked ? (

@@ -19,21 +19,20 @@ function youtubeId(url: string): string | null {
   return null;
 }
 
+/** The player only. Its box is drawn by the sheet from the moment the card
+ * starts growing, so the final height is known before the animation runs and
+ * the heavy player can be mounted afterwards without changing the layout. */
 export function ClubVideo({ url, title }: Props) {
   const id = youtubeId(url);
-  return (
-    <div className="club-video">
-      {id ? (
-        <iframe
-          src={`https://www.youtube-nocookie.com/embed/${id}`}
-          title={`Відео: ${title}`}
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
-      ) : (
-        <video src={url} controls playsInline preload="metadata" />
-      )}
-    </div>
+  return id ? (
+    <iframe
+      src={`https://www.youtube-nocookie.com/embed/${id}`}
+      title={`Відео: ${title}`}
+      allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+      loading="lazy"
+    />
+  ) : (
+    <video src={url} controls playsInline preload="metadata" />
   );
 }
