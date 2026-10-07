@@ -7,6 +7,7 @@ import { ClubForm } from "./components/ClubForm";
 import { ClubList } from "./components/ClubList";
 import { ClubRegistrationsSheet } from "./components/ClubRegistrationsSheet";
 import { ClubSheet } from "./components/ClubSheet";
+import { FaqSheet } from "./components/FaqSheet";
 import { TicketIcon } from "./components/Icons";
 import { MyBookingsSheet } from "./components/MyBookingsSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
@@ -105,6 +106,7 @@ export function App() {
   const [mineLoading, setMineLoading] = useState(inTelegram);
   const [mineError, setMineError] = useState<string | null>(null);
   const [bookingsOpen, setBookingsOpen] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
   const [busyClubId, setBusyClubId] = useState<string | null>(null);
   const [busySubId, setBusySubId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -163,6 +165,7 @@ export function App() {
   const subsPresence = usePresence(subsOpen);
   const successPresence = usePresence(!!success);
   const bookingsPresence = usePresence(bookingsOpen);
+  const faqPresence = usePresence(faqOpen);
 
   const [adminOpen, setAdminOpen] = useState(false);
   const [editingClub, setEditingClub] = useState<Club | null>(null);
@@ -191,6 +194,7 @@ export function App() {
       subsPresence.rendered ||
       successPresence.rendered ||
       bookingsPresence.rendered ||
+      faqPresence.rendered ||
       adminPresence.rendered ||
       formPresence.rendered ||
       regsPresence.rendered,
@@ -416,7 +420,7 @@ export function App() {
                 type="button"
                 className="theme-btn"
                 onClick={() => setBookingsOpen(true)}
-                aria-label="Мої записи"
+                aria-label="Мої клаби"
               >
                 <TicketIcon width={20} height={20} />
                 {mine.bookings.length ? <i className="badge-dot" /> : null}
@@ -492,9 +496,13 @@ export function App() {
           error={mineError}
           cancellingId={cancellingId}
           closing={bookingsPresence.closing}
+          onOpenFaq={() => setFaqOpen(true)}
           onClose={() => setBookingsOpen(false)}
           onCancel={(booking) => onCancelBooking(booking.id, booking.club?.title ?? "")}
         />
+      ) : null}
+      {faqPresence.rendered ? (
+        <FaqSheet closing={faqPresence.closing} onClose={() => setFaqOpen(false)} />
       ) : null}
       {adminPresence.rendered ? (
         <AdminPanel

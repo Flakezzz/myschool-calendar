@@ -995,3 +995,43 @@ a {
   margin-top: 6px;
 }
 
+
+/* FAQ sheet — the "?" button in "Мої клаби" opens it. */
+.faq-btn {
+  background: #f2c14e;
+  color: #3a2d05;
+}
+
+.faq-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+
+.faq-q {
+  margin: 0 0 4px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.faq-a {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.faq-contact {
+  margin: 22px 0 4px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.faq-contact a {
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: none;
+}

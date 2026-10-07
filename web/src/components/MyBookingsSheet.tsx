@@ -1,5 +1,6 @@
 import { passSessionsLeft, type MyBooking, type MyPass } from "../lib/api";
 import { formatShortDate, formatTimestampDate, hasStarted } from "../lib/dates";
+import { QuestionIcon } from "./Icons";
 
 type Props = {
   bookings: MyBooking[];
@@ -10,6 +11,7 @@ type Props = {
   closing: boolean;
   onClose: () => void;
   onCancel: (booking: MyBooking) => void;
+  onOpenFaq: () => void;
 };
 
 export function MyBookingsSheet({
@@ -21,6 +23,7 @@ export function MyBookingsSheet({
   closing,
   onClose,
   onCancel,
+  onOpenFaq,
 }: Props) {
   const withClub = bookings.filter((b) => b.club);
   const upcoming = withClub
@@ -35,10 +38,20 @@ export function MyBookingsSheet({
       <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <header>
-          <h2>Мої записи</h2>
-          <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
-            ✕
-          </button>
+          <h2>Мої клаби</h2>
+          <div className="sheet-head-actions">
+            <button
+              className="icon-btn faq-btn"
+              type="button"
+              onClick={onOpenFaq}
+              aria-label="Часті питання"
+            >
+              <QuestionIcon width={18} height={18} />
+            </button>
+            <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
+              ✕
+            </button>
+          </div>
         </header>
 
         {error ? <p className="form-error">{error}</p> : null}
