@@ -480,6 +480,16 @@ a {
   height: 32px;
   border-radius: 10px;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+}
+
+/* Share sits to the left of close, same size and style. */
+.sheet-head-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .success-sheet {

@@ -33,3 +33,38 @@ export function PeopleIcon(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function ShareIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <path
+        d="M12 15.5V4m0 0L8.5 7.5M12 4l3.5 3.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5.5 12.5v5.75c0 .69.56 1.25 1.25 1.25h10.5c.69 0 1.25-.56 1.25-1.25V12.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+export function QuestionIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <circle cx="12" cy="12" r="8.25" stroke="currentColor" strokeWidth="1.5" />
+      <path
+        d="M9.75 9.5a2.25 2.25 0 1 1 3 2.12c-.45.17-.75.6-.75 1.08v.55"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="16.25" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}

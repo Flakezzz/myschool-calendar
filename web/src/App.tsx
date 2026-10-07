@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { type Club } from "./data/clubs";
 import { type Subscription } from "./data/subscriptions";
 import { AdminPanel } from "./components/AdminPanel";
@@ -29,7 +29,7 @@ import {
 } from "./lib/api";
 import { formatDayTitle, formatShortDate, isoDate, monthTitle } from "./lib/dates";
 import { fetchClubs, fetchSubscriptions } from "./lib/supabase";
-import { confirmDialog, getTelegramUserId, isFallbackAdmin } from "./lib/telegram";
+import { confirmDialog, getStartParam, getTelegramUserId, isFallbackAdmin, shareClub } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
@@ -225,6 +225,34 @@ export function App() {
   }, [mine.bookings]);
 
   const usablePass = useMemo(() => nextPass(mine.passes), [mine.passes]);
+
+  // A shared link (t.me/<bot>?startapp=<clubId>) must open straight on that
+  // club, so wait for the clubs to arrive and then jump to it once.
+  const startParamHandled = useRef(false);
+  useEffect(() => {
+    if (startParamHandled.current || clubs.length === 0) return;
+    startParamHandled.current = true;
+    const clubId = getStartParam();
+    if (!clubId) return;
+    const club = clubs.find((c) => c.id === clubId);
+    if (!club) return;
+    setSelected(club.date);
+    setOpen(club);
+  }, [clubs]);
+
+  const onShare = async (club: Club) => {
+    const result = await shareClub(club.id, club.title);
+    if (result === "shared") return;
+    setSuccess({
+      heading: result === "copied" ? "Посилання скопійовано" : "Не вдалося поділитись",
+      title: club.title,
+      subtitle:
+        result === "copied"
+          ? "Надішліть його другу — застосунок відкриється саме на цьому клабі."
+          : "Спробуйте ще раз або скопіюйте посилання вручну.",
+      failed: result !== "copied",
+    });
+  };
 
   const demoNotice = (title: string) => {
     setOpen(null);
@@ -442,6 +470,7 @@ export function App() {
           onPay={onPay}
           onCancel={(registrationId) => onCancelBooking(registrationId, shownClub.title)}
           onOpenSubscriptions={onOpenSubscriptions}
+          onShare={onShare}
           minSubPrice={subscriptions.length ? Math.min(...subscriptions.map((s) => s.priceUah)) : 0}
         />
       ) : null}

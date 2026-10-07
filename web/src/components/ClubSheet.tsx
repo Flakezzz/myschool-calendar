@@ -1,4 +1,5 @@
 import { Club } from "../data/clubs";
+import { ShareIcon } from "./Icons";
 import { passSessionsLeft, type MyPass } from "../lib/api";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   onPay: (club: Club) => void;
   onCancel: (registrationId: string) => void;
   onOpenSubscriptions: () => void;
+  onShare: (club: Club) => void;
   minSubPrice: number;
 };
 
@@ -26,6 +28,7 @@ export function ClubSheet({
   onPay,
   onCancel,
   onOpenSubscriptions,
+  onShare,
   minSubPrice,
 }: Props) {
   const left = club.seats - club.taken;
@@ -39,9 +42,19 @@ export function ClubSheet({
         <div className="sheet-handle" />
         <header>
           <h2>{club.title}</h2>
-          <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
-            ✕
-          </button>
+          <div className="sheet-head-actions">
+            <button
+              className="icon-btn"
+              type="button"
+              onClick={() => onShare(club)}
+              aria-label="Поділитись клабом"
+            >
+              <ShareIcon width={18} height={18} />
+            </button>
+            <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
+              ✕
+            </button>
+          </div>
         </header>
         <p className="sheet-desc">{club.description}</p>
         <dl className="facts">
