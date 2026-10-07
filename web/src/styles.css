@@ -1089,18 +1089,11 @@ a {
   flex: 0 0 auto;
 }
 
-/* Expanded, the clip sits low in the card with the pass note and buttons
-   under it. Two auto margins share the leftover space evenly, so the gap
-   above the clip is half of what a single one gave. */
-.club-sheet.expanded .club-video,
-.club-sheet.expanded .sheet-actions {
-  margin-top: auto;
-}
-
-/* margin-top:auto collapses to 0 when the card is already full, so a small
-   gap above the clip is guaranteed by the block before it. */
+/* No auto margins any more: the card is only as tall as its content, so
+   there is no leftover space to push anything into. The clip keeps its own
+   modest breathing room and the buttons follow right after it. */
 .club-sheet.expanded .facts {
-  margin-bottom: 9px;
+  margin-bottom: 4px;
 }
 
 /* Collapsed, a long description is trimmed so the actions stay reachable. */

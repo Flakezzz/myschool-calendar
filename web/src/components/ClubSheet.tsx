@@ -40,18 +40,24 @@ export function ClubSheet({
   const [dragY, setDragY] = useState(0);
   const dragFrom = useRef<number | null>(null);
 
-  // Both heights have to be real pixel values for the growth to animate:
-  // a transition cannot run from a content-driven height to a fixed one.
+  // The height has to be a real pixel value for the growth to animate: a
+  // transition cannot run from a content-driven height to a fixed one. So the
+  // natural height is measured and then applied — which also means the card
+  // grows to fit its content instead of stretching to the screen and leaving
+  // empty space inside.
   const sheetRef = useRef<HTMLElement | null>(null);
-  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
-  const [fullHeight, setFullHeight] = useState<number | null>(null);
+  const [height, setHeight] = useState<number | null>(null);
 
-  useLayoutEffect(() => {
+  const measure = () => {
     const el = sheetRef.current;
     if (!el) return;
-    setCollapsedHeight(el.getBoundingClientRect().height);
-    setFullHeight(Math.round(window.innerHeight * 0.94));
-  }, [club.id]);
+    const cap = Math.round(window.innerHeight * 0.94);
+    const previous = el.style.height;
+    el.style.height = "auto";
+    const natural = el.scrollHeight;
+    el.style.height = previous;
+    setHeight(Math.min(natural, cap));
+  };
 
   const [showVideo, setShowVideo] = useState(false);
   useEffect(() => {
@@ -63,11 +69,12 @@ export function ClubSheet({
     return () => clearTimeout(t);
   }, [expanded]);
 
-  // Keep the full height correct when the keyboard or rotation changes it.
+  // Re-measure whenever what is inside changes, and when the window does.
+  useLayoutEffect(measure, [expanded, showVideo, club.id]);
+
   useEffect(() => {
-    const onResize = () => setFullHeight(Math.round(window.innerHeight * 0.94));
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
   }, []);
 
   const [dragging, setDragging] = useState(false);
@@ -110,7 +117,7 @@ export function ClubSheet({
           dragging ? " is-dragging" : ""
         }${closing ? " closing" : ""}`}
         style={{
-          height: expanded ? (fullHeight ?? undefined) : (collapsedHeight ?? undefined),
+          height: height ?? undefined,
           transform: dragY ? `translateY(${dragY}px)` : undefined,
         }}
         onClick={(e) => e.stopPropagation()}
