@@ -1,6 +1,9 @@
 import { Subscription } from "../data/subscriptions";
 import { passSessionsLeft, type MyPass } from "../lib/api";
 
+/** The client wants each tier to answer differently, cheapest first. */
+const BUY_LABELS = ["хочу", "беру", "дуже хочу"];
+
 type Props = {
   subscriptions: Subscription[];
   /** The pass the user already holds, if any — only one at a time. */
@@ -26,7 +29,7 @@ export function SubscriptionsSheet({
       <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <header>
-          <h2>Абонементи</h2>
+          <h2>абонементи</h2>
           <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
             ✕
           </button>
@@ -40,14 +43,14 @@ export function SubscriptionsSheet({
             Новий можна придбати, коли цей закінчиться.
           </p>
         ) : (
-          <p className="sheet-desc">Купіть абонемент і відвідуйте клаби без окремої оплати за кожен.</p>
+          <p className="sheet-desc">бери абон і ходи на клаби без окремої оплати за кожен</p>
         )}
         <ul className="sub-list">
-          {subscriptions.map((sub) => (
+          {subscriptions.map((sub, i) => (
             <li key={sub.id} className="sub-card">
               <div className="sub-top">
                 <strong>{sub.title}</strong>
-                <em>{sub.priceUah} ₴</em>
+                <em>{sub.priceUah} грн</em>
               </div>
               <p className="sub-sessions">{sub.sessions}</p>
               <p className="sub-desc">{sub.description}</p>
@@ -57,7 +60,7 @@ export function SubscriptionsSheet({
                 disabled={busyId !== null || !!activePass}
                 onClick={() => onBuy(sub)}
               >
-                {busyId === sub.id ? "Оформлюємо…" : "Придбати"}
+                {busyId === sub.id ? "оформлюємо…" : BUY_LABELS[i] ?? "хочу"}
               </button>
             </li>
           ))}

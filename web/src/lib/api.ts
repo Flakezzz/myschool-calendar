@@ -192,7 +192,12 @@ export async function bookClub(clubId: string): Promise<BookResult> {
   };
 }
 
-export const cancelBooking = (registrationId: string) => call("cancel_booking", { registrationId });
+export type CancelResult = { sessionBurned: boolean };
+
+export async function cancelBooking(registrationId: string): Promise<CancelResult> {
+  const data = await call("cancel_booking", { registrationId });
+  return { sessionBurned: data.result?.session_burned === true };
+}
 
 export type BuyResult = { title: string; sessionsTotal: number | null; expiresAt: string };
 

@@ -106,21 +106,21 @@ export function ClubSheet({
         {expanded && club.videoUrl ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
         <dl className="facts">
           <div>
-            <dt>Час</dt>
+            <dt>час</dt>
             <dd>
               {club.startTime}–{club.endTime}
             </dd>
           </div>
           <div>
-            <dt>Викладач</dt>
+            <dt>тічер</dt>
             <dd>{club.teacher}</dd>
           </div>
           <div>
-            <dt>Рівень</dt>
+            <dt>рівень</dt>
             <dd>{club.level}</dd>
           </div>
           <div>
-            <dt>Місця</dt>
+            <dt>місця</dt>
             <dd>
               {club.taken}/{club.seats}
             </dd>
@@ -128,12 +128,12 @@ export function ClubSheet({
         </dl>
 
         {booked ? (
-          <p className="sheet-note is-booked">✓ Ви записані на цей клаб</p>
+          <p className="sheet-note is-booked">ти в ділі ✓</p>
         ) : pass ? (
           <p className="sheet-note">
-            Ваш абонемент «{pass.title}»:{" "}
-            {sessionsLeft === null ? "безліміт" : `залишилось ${sessionsLeft}`} — цей запис буде
-            безкоштовним.
+            в тебе абон «{pass.title}»:{" "}
+            {sessionsLeft === null ? "безліміт" : `лишилось ${sessionsLeft}`} — цей клаб
+            безкоштовний
           </p>
         ) : null}
 
@@ -145,23 +145,23 @@ export function ClubSheet({
               disabled={busy}
               onClick={() => onCancel(bookedRegistrationId!)}
             >
-              <span>{busy ? "Скасовуємо…" : "Скасувати запис"}</span>
+              <span>{busy ? "скасовуємо…" : "не піду"}</span>
             </button>
           ) : (
             <button className="pay-btn primary" type="button" disabled={full || busy} onClick={() => onPay(club)}>
               {full ? (
-                <span>Немає місць</span>
+                <span>все, місць нема</span>
               ) : (
                 <>
-                  <span>{busy ? "Записуємо…" : "Записатись"}</span>
-                  <em>{pass ? "за абонементом" : `${club.priceUah} ₴`}</em>
+                  <span>{busy ? "записуємо…" : "го"}</span>
+                  <em>{pass ? "за абоном" : `${club.priceUah} грн`}</em>
                 </>
               )}
             </button>
           )}
           <button className="pay-btn secondary" type="button" onClick={onOpenSubscriptions}>
-            <span>Абонемент</span>
-            <em>від {minSubPrice} ₴</em>
+            <span>абонемент</span>
+            <em>від {minSubPrice} грн</em>
           </button>
         </div>
       </article>

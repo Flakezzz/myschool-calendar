@@ -29,23 +29,23 @@ export function PaymentSuccessSheet({
         <div className={`success-icon${failed ? " is-failed" : ""}`} aria-hidden="true">
           {failed ? "!" : "✓"}
         </div>
-        <h2>{heading ?? (failed ? "Не вдалося записатися" : "Оплата успішна")}</h2>
+        <h2>{heading ?? (failed ? "не вдалося записатися" : "санчізес")}</h2>
         <p className="success-item">{title}</p>
         <p className="success-sub">{subtitle}</p>
-        {priceUah !== undefined ? <p className="success-price">{priceUah} ₴</p> : null}
+        {priceUah !== undefined ? <p className="success-price">{priceUah} грн</p> : null}
         {note ? <p className="success-note">{note}</p> : null}
         {onRenew ? (
           <div className="success-actions">
             <button type="button" className="pay-btn primary" onClick={onRenew}>
-              <span>Поновити абонемент</span>
+              <span>хочу ще</span>
             </button>
             <button type="button" className="pay-btn" onClick={onClose}>
-              Пізніше
+              потім
             </button>
           </div>
         ) : (
           <button type="button" className="pay-btn" onClick={onClose}>
-            {failed ? "Зрозуміло" : "Готово"}
+            {failed ? "зрозуміло" : "найс"}
           </button>
         )}
       </article>

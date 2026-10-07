@@ -30,7 +30,14 @@ import {
 } from "./lib/api";
 import { formatDayTitle, formatShortDate, isoDate, monthTitle } from "./lib/dates";
 import { fetchClubs, fetchSubscriptions } from "./lib/supabase";
-import { confirmDialog, getStartParam, getTelegramUserId, isFallbackAdmin, shareClub } from "./lib/telegram";
+import {
+  confirmCancelBooking,
+  confirmDialog,
+  getStartParam,
+  getTelegramUserId,
+  isFallbackAdmin,
+  shareClub,
+} from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
 
@@ -48,21 +55,21 @@ const EMPTY_MINE: Mine = { bookings: [], passes: [] };
 
 // The database raises these on purpose; everything else is unexpected.
 const ERROR_TEXT: Record<string, string> = {
-  already_booked: "Ви вже записані на цей клаб.",
-  club_full: "На жаль, вільних місць уже немає.",
-  club_not_found: "Цього клабу вже не існує.",
-  club_already_started: "Клаб уже почався — скасувати запис не вийде.",
-  booking_not_found: "Запис не знайдено.",
-  subscription_not_found: "Цього абонемента вже не існує.",
-  already_has_pass: "У вас уже є активний абонемент. Новий можна придбати, коли цей закінчиться.",
-  unauthorized: "Відкрийте застосунок через Telegram.",
-  forbidden: "Немає доступу.",
+  already_booked: "ти вже тут записаний",
+  club_full: "місця щойно закінчились",
+  club_not_found: "цього клаба більше немає",
+  club_already_started: "клаб уже почався, скасувати не вийде",
+  booking_not_found: "не знайшли такого запису",
+  subscription_not_found: "такого абона більше немає",
+  already_has_pass: "в тебе вже є активний абон, новий можна взяти як цей скінчиться",
+  unauthorized: "відкрий через телеграм",
+  forbidden: "немає доступу",
   admin_session_expired: "Сесія адміна застаріла. Закрийте застосунок і відкрийте знову.",
 };
 
 function errorText(err: unknown): string {
   const code = err instanceof ApiError ? err.code : "";
-  return ERROR_TEXT[code] ?? "Щось пішло не так. Спробуйте ще раз за хвилину.";
+  return ERROR_TEXT[code] ?? "щось пішло не так, спробуй за хвилинку";
 }
 
 function blankClub(): Club {
@@ -251,12 +258,12 @@ export function App() {
     const result = await shareClub(club.id, club.title);
     if (result === "shared") return;
     setSuccess({
-      heading: result === "copied" ? "Посилання скопійовано" : "Не вдалося поділитись",
+      heading: result === "copied" ? "посилання скопійовано" : "не вдалося поділитись",
       title: club.title,
       subtitle:
         result === "copied"
-          ? "Надішліть його другу — застосунок відкриється саме на цьому клабі."
-          : "Спробуйте ще раз або скопіюйте посилання вручну.",
+          ? "кидай другу — відкриється саме цей клаб"
+          : "спробуй ще раз або скопіюй посилання вручну",
       failed: result !== "copied",
     });
   };
@@ -265,9 +272,9 @@ export function App() {
     setOpen(null);
     setSubsOpen(false);
     setSuccess({
-      heading: "Демо-режим",
+      heading: "демо-режим",
       title,
-      subtitle: "Відкрийте застосунок у Telegram, щоб записатись.",
+      subtitle: "відкрий у телеграмі, щоб записатись",
       failed: true,
     });
   };
@@ -280,15 +287,15 @@ export function App() {
       const result = await bookClub(club.id);
       setOpen(null);
       setSuccess({
-        heading: result.paidWith === "subscription" ? "Записано за абонементом" : "Оплата успішна",
+        heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
             ? result.sessionsLeft === 0
-              ? "Це було останнє відвідування за абонементом."
-              : `Залишилось відвідувань: ${result.sessionsLeft}`
+              ? "це було останнє за абоном"
+              : `лишилось ${result.sessionsLeft} відвідувань`
             : undefined,
         renewPass: result.paidWith === "subscription" && result.sessionsLeft === 0,
       });
@@ -305,20 +312,24 @@ export function App() {
   };
 
   const onCancelBooking = async (registrationId: string, title: string) => {
-    const confirmed = await confirmDialog(`Скасувати запис на «${title}»?`);
+    const confirmed = await confirmCancelBooking(`точно не йдеш на «${title}»?`);
     if (!confirmed) return;
 
     setCancellingId(registrationId);
     try {
-      await cancelBooking(registrationId);
+      // The server decides whether the session came back: inside 24 hours it
+      // burns, so never promise a refund the database did not make.
+      const { sessionBurned } = await cancelBooking(registrationId);
       setOpen(null);
       setSuccess({
-        heading: "Запис скасовано",
+        heading: "окей, скасували",
         title,
-        subtitle: "Місце звільнено. Якщо ви платили абонементом, відвідування повернулось.",
+        subtitle: sessionBurned
+          ? "місце звільнили, але відвідування згоріло — скасування день у день не повертається"
+          : "місце звільнили, відвідування повернули на абон",
       });
     } catch (err) {
-      setSuccess({ heading: "Не вдалося скасувати", title, subtitle: errorText(err), failed: true });
+      setSuccess({ heading: "не вдалося скасувати", title, subtitle: errorText(err), failed: true });
     } finally {
       setCancellingId(null);
       await Promise.all([reloadClubs(), reloadMine()]);
@@ -336,7 +347,7 @@ export function App() {
         title: sub.title,
         subtitle: sub.sessions,
         priceUah: sub.priceUah,
-        note: "Абонемент активний — наступні записи на клаби будуть безкоштовними.",
+        note: "абон активний — наступні клаби безкоштовні",
       });
     } catch (err) {
       setSubsOpen(false);

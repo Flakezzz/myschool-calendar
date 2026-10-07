@@ -82,6 +82,29 @@ export function confirmDialog(message: string): Promise<boolean> {
   return Promise.resolve(window.confirm(message));
 }
 
+/** Cancelling a booking, asked in the school's own voice. showConfirm only
+ * ever draws Cancel/OK, so the custom wording needs showPopup (Bot API 6.2+);
+ * older clients fall back to the plain confirm. */
+export function confirmCancelBooking(message: string): Promise<boolean> {
+  const tg = window.Telegram?.WebApp;
+  if (tg?.showPopup) {
+    return new Promise((resolve) => {
+      tg.showPopup!(
+        {
+          title: "ти куди...?",
+          message,
+          buttons: [
+            { id: "leave", type: "destructive", text: "куди нода" },
+            { id: "stay", type: "default", text: "жартую так" },
+          ],
+        },
+        (id) => resolve(id === "leave"),
+      );
+    });
+  }
+  return confirmDialog(message);
+}
+
 declare global {
   interface Window {
     Telegram?: {
@@ -98,6 +121,14 @@ declare global {
         disableVerticalSwipes?: () => void;
         close: () => void;
         showConfirm?: (message: string, callback: (confirmed: boolean) => void) => void;
+        showPopup?: (
+          params: {
+            title?: string;
+            message: string;
+            buttons?: { id?: string; type?: string; text?: string }[];
+          },
+          callback?: (buttonId: string) => void,
+        ) => void;
       };
     };
   }

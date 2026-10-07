@@ -9,8 +9,8 @@ export function ClubList({ clubs, onOpen }: Props) {
   if (!clubs.length) {
     return (
       <div className="empty-day">
-        <p>Цього дня клабів немає</p>
-        <span>Оберіть іншу дату в календарі</span>
+        <p>тут пусто</p>
+        <span>обирай інший день</span>
       </div>
     );
   }
@@ -27,14 +27,14 @@ export function ClubList({ clubs, onOpen }: Props) {
               <div className="club-body">
                 <div className="club-top">
                   <strong>{club.title}</strong>
-                  <em>{club.priceUah} ₴</em>
+                  <em>{club.priceUah} грн</em>
                 </div>
                 <p>
                   {club.startTime}–{club.endTime} · {club.teacher} · {club.level}
                 </p>
                 <div className="club-meta">
                   <span className={full ? "full" : "seats"}>
-                    {full ? "Немає місць" : `${left} місць`}
+                    {full ? "все, місць нема" : `${left} місць`}
                   </span>
                 </div>
               </div>
