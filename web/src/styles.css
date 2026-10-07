@@ -461,7 +461,11 @@ a {
   background: var(--card);
   border-radius: 24px 24px 0 0;
   padding: 12px 20px 32px;
-  animation: sheet-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* backwards, not both: with "both" the finished entrance keeps asserting
+     its final transform, which overrides anything set inline afterwards —
+     the club card's own slide could never run. Its end state is the natural
+     one anyway, so nothing needs to be held. */
+  animation: sheet-slide-in 240ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .sheet.closing {
@@ -1062,16 +1066,14 @@ a {
   cursor: grabbing;
 }
 
-/* The height is set inline from JS so the growth can actually animate — CSS
-   cannot transition from a content-driven height to a fixed one.
-   will-change + containment keep the per-frame work off the rest of the page,
-   which is what made the growth stutter. */
+/* Height is applied in one go from JS and only the transform animates, so a
+   frame costs a composite instead of a full re-layout of everything inside.
+   will-change promotes the card to its own layer for that slide. */
 .club-sheet {
-  transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1);
   max-height: 94vh;
   max-height: 94dvh;
-  will-change: height;
-  contain: layout;
+  will-change: transform;
+  contain: layout paint;
 }
 
 /* While a finger is on the handle nothing may animate, or the sheet lags
