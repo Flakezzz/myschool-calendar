@@ -1091,11 +1091,17 @@ a {
   flex: 0 0 auto;
 }
 
-/* No auto margins any more: the card is only as tall as its content, so
-   there is no leftover space to push anything into. The clip keeps its own
-   modest breathing room and the buttons follow right after it. */
+/* The card is only as tall as its content, so there is no leftover space to
+   push anything into. The clip keeps its own modest breathing room and the
+   buttons follow right after it. */
 .club-sheet.expanded .facts {
   margin-bottom: 4px;
+}
+
+/* Closed, the clip is loaded but not laid out — the embed is already warm by
+   the time the card opens, so opening costs nothing but the slide. */
+.club-sheet:not(.expanded) .club-video {
+  display: none;
 }
 
 /* Collapsed, a long description is trimmed so the actions stay reachable. */

@@ -42,59 +42,60 @@ export function ClubSheet({
   const sheetRef = useRef<HTMLElement | null>(null);
   const lastHeight = useRef(0);
 
-  const [showVideo, setShowVideo] = useState(false);
-  useEffect(() => {
-    if (!expanded) {
-      setShowVideo(false);
-      return;
-    }
-    const t = setTimeout(() => setShowVideo(true), 320);
-    return () => clearTimeout(t);
-  }, [expanded]);
+  // Both heights are worked out once, while the card is still closed and
+  // nothing is moving. Measuring costs a forced re-layout, and doing that on
+  // every toggle — with a YouTube embed already inside — is what made the
+  // card lag. Afterwards a toggle is one number and a slide, no measuring.
+  const heights = useRef({ collapsed: 0, expanded: 0 });
 
-  // Growing the card by animating its height makes the browser re-lay-out
-  // everything inside on every frame — with a YouTube embed in there that
-  // drops frames on a phone. So the height is applied at once and the card
-  // is pushed back down by the difference, then slid to zero: the layout
-  // happens once and only a composited transform animates.
-  useLayoutEffect(() => {
+  const measureBoth = () => {
     const el = sheetRef.current;
     if (!el) return;
     const cap = Math.round(window.innerHeight * 0.94);
+    const wasExpanded = el.classList.contains("expanded");
 
     el.style.transition = "none";
+    el.classList.remove("expanded");
     el.style.height = "auto";
-    const natural = Math.min(el.scrollHeight, cap);
-    el.style.height = `${natural}px`;
+    const collapsed = el.scrollHeight;
 
+    el.classList.add("expanded");
+    el.style.height = "auto";
+    const expandedHeight = Math.min(el.scrollHeight, cap);
+
+    if (!wasExpanded) el.classList.remove("expanded");
+    heights.current = { collapsed, expanded: expandedHeight };
+    const target = wasExpanded ? expandedHeight : collapsed;
+    el.style.height = `${target}px`;
+    lastHeight.current = target;
+  };
+
+  useLayoutEffect(measureBoth, [club.id]);
+
+  useEffect(() => {
+    window.addEventListener("resize", measureBoth);
+    return () => window.removeEventListener("resize", measureBoth);
+  }, []);
+
+  // Growing by animating height re-lays-out everything inside on every frame.
+  // Instead the height is applied in one write and the card is pushed back
+  // down by the difference, then slid to zero: one layout, then a composited
+  // transform the GPU can carry.
+  useLayoutEffect(() => {
+    const el = sheetRef.current;
+    if (!el || heights.current.expanded === 0) return;
+    const target = expanded ? heights.current.expanded : heights.current.collapsed;
     const previous = lastHeight.current;
-    lastHeight.current = natural;
-    // Nothing to slide from on the first layout — the sheet has its own
-    // entrance animation for that.
-    if (previous === 0 || previous === natural) {
-      el.style.transform = "";
-      return;
-    }
+    lastHeight.current = target;
+    if (previous === 0 || previous === target) return;
 
-    el.style.transform = `translateY(${natural - previous}px)`;
+    el.style.transition = "none";
+    el.style.height = `${target}px`;
+    el.style.transform = `translateY(${target - previous}px)`;
     void el.offsetHeight;
     el.style.transition = "transform 300ms cubic-bezier(0.16, 1, 0.3, 1)";
     el.style.transform = "translateY(0)";
-  }, [expanded, club.id]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const el = sheetRef.current;
-      if (!el) return;
-      el.style.transition = "none";
-      el.style.height = "auto";
-      const natural = Math.min(el.scrollHeight, Math.round(window.innerHeight * 0.94));
-      el.style.height = `${natural}px`;
-      lastHeight.current = natural;
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [expanded]);
 
   // The drag writes straight to the element. Going through React state here
   // meant re-rendering the whole card — embed included — on every pointer
@@ -206,9 +207,9 @@ export function ClubSheet({
           </div>
         </dl>
 
-        {expanded && club.videoUrl ? (
+        {club.videoUrl ? (
           <div className="club-video">
-            {showVideo ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
+            <ClubVideo url={club.videoUrl} title={club.title} />
           </div>
         ) : null}
 
