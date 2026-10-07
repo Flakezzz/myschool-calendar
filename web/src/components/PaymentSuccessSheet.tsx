@@ -9,6 +9,8 @@ type Props = {
   failed?: boolean;
   /** Shown when that booking used the last session on the pass. */
   onRenew?: () => void;
+  /** Price line under "хочу ще", same shape as the Абонемент button. */
+  renewHint?: string;
   closing: boolean;
   onClose: () => void;
 };
@@ -22,6 +24,7 @@ export function PaymentSuccessSheet({
   priceUah,
   failed = false,
   onRenew,
+  renewHint,
   closing,
   onClose,
 }: Props) {
@@ -40,11 +43,12 @@ export function PaymentSuccessSheet({
         {note ? <p className="success-note">{note}</p> : null}
         {onRenew ? (
           <div className="success-actions">
-            <button type="button" className="pay-btn primary" onClick={onRenew}>
-              <span>хочу ще</span>
-            </button>
             <button type="button" className="pay-btn" onClick={onClose}>
               потім
+            </button>
+            <button type="button" className="pay-btn secondary" onClick={onRenew}>
+              <span>хочу ще</span>
+              {renewHint ? <em>{renewHint}</em> : null}
             </button>
           </div>
         ) : (

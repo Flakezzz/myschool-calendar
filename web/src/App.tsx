@@ -573,6 +573,11 @@ export function App() {
                 }
               : undefined
           }
+          renewHint={
+            subscriptions.length
+              ? `від ${Math.min(...subscriptions.map((s) => s.priceUah))} грн`
+              : undefined
+          }
           closing={successPresence.closing}
           onClose={() => setSuccess(null)}
         />

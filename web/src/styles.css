@@ -263,17 +263,20 @@ a {
   position: relative;
 }
 
-.cell.booked::before {
-  content: "";
-  position: absolute;
-  inset: 5px 9px;
-  border: 1.5px solid var(--navy-dim);
+/* A filled, rounded square behind the date itself — sized off the number
+   rather than the cell, which is taller than it is wide. */
+.cell.booked .num {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  /* Same corner softness as the selected day, scaled to this smaller box. */
   border-radius: 9px;
-  pointer-events: none;
+  background: rgba(111, 147, 171, 0.3);
 }
 
-.cell.booked.selected::before {
-  border-color: rgba(255, 255, 255, 0.6);
+.cell.booked.selected .num {
+  background: rgba(255, 255, 255, 0.28);
 }
 
 .dots {
@@ -1076,7 +1079,19 @@ a {
   flex: 0 0 auto;
 }
 
-.club-sheet.expanded .sheet-actions {
+/* Expanded, the clip sits at the bottom of the card — the pass note and the
+   action buttons stay under it, everything else stays above. */
+.club-sheet.expanded .club-video {
+  margin-top: auto;
+}
+
+/* margin-top:auto collapses to 0 when the card is already full, so the gap
+   above the clip is guaranteed by the block before it. */
+.club-sheet.expanded .facts {
+  margin-bottom: 18px;
+}
+
+.club-sheet.expanded:not(:has(.club-video)) .sheet-actions {
   margin-top: auto;
 }
 
@@ -1089,7 +1104,7 @@ a {
 }
 
 .club-video {
-  margin: 14px 0 4px;
+  margin: 18px 0;
   border-radius: 16px;
   overflow: hidden;
   background: var(--btn-bg);
@@ -1104,10 +1119,12 @@ a {
   border: 0;
 }
 
-/* Two actions on the success sheet when the pass just ran out. */
+/* Two actions side by side when the pass just ran out, laid out like the
+   pair in the club sheet. */
 .success-actions {
   display: grid;
-  gap: 8px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 /* The "your link is coming" line, between the date and the pass counter. */

@@ -126,8 +126,6 @@ export function ClubSheet({
           </div>
         </header>
         <p className={`sheet-desc${expanded ? " is-full" : ""}`}>{club.description}</p>
-
-        {expanded && club.videoUrl ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
         <dl className="facts">
           <div>
             <dt>час</dt>
@@ -150,6 +148,8 @@ export function ClubSheet({
             </dd>
           </div>
         </dl>
+
+        {expanded && club.videoUrl ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
 
         {booked ? (
           <p className="sheet-note is-booked">ти в ділі ✓</p>
