@@ -1094,3 +1094,9 @@ a {
   height: 100%;
   border: 0;
 }
+
+/* Two actions on the success sheet when the pass just ran out. */
+.success-actions {
+  display: grid;
+  gap: 8px;
+}

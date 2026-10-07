@@ -41,6 +41,7 @@ type SuccessInfo = {
   note?: string;
   priceUah?: number;
   failed?: boolean;
+  renewPass?: boolean;
 };
 
 const EMPTY_MINE: Mine = { bookings: [], passes: [] };
@@ -79,6 +80,7 @@ function blankClub(): Club {
     taken: 0,
     priceUah: 0,
     color: "#E85D4C",
+    meetingUrl: null,
     videoUrl: null,
   };
 }
@@ -284,8 +286,11 @@ export function App() {
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
-            ? `Залишилось відвідувань: ${result.sessionsLeft}`
+            ? result.sessionsLeft === 0
+              ? "Це було останнє відвідування за абонементом."
+              : `Залишилось відвідувань: ${result.sessionsLeft}`
             : undefined,
+        renewPass: result.paidWith === "subscription" && result.sessionsLeft === 0,
       });
     } catch (err) {
       // The database enforces capacity and the one-booking-per-club rule, so
@@ -546,6 +551,14 @@ export function App() {
           note={shownSuccess.note}
           priceUah={shownSuccess.priceUah}
           failed={shownSuccess.failed}
+          onRenew={
+            shownSuccess.renewPass
+              ? () => {
+                  setSuccess(null);
+                  setSubsOpen(true);
+                }
+              : undefined
+          }
           closing={successPresence.closing}
           onClose={() => setSuccess(null)}
         />

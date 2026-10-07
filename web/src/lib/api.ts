@@ -65,6 +65,8 @@ function toClubRow(club: Club) {
     // stale value from the form overwrite the real booking count.
     price_uah: club.priceUah,
     color: club.color,
+    meeting_url: club.meetingUrl || null,
+    video_url: club.videoUrl || null,
   };
 }
 

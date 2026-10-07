@@ -5,6 +5,8 @@ type Props = {
   note?: string;
   priceUah?: number;
   failed?: boolean;
+  /** Shown when that booking used the last session on the pass. */
+  onRenew?: () => void;
   closing: boolean;
   onClose: () => void;
 };
@@ -16,6 +18,7 @@ export function PaymentSuccessSheet({
   note,
   priceUah,
   failed = false,
+  onRenew,
   closing,
   onClose,
 }: Props) {
@@ -31,9 +34,20 @@ export function PaymentSuccessSheet({
         <p className="success-sub">{subtitle}</p>
         {priceUah !== undefined ? <p className="success-price">{priceUah} ₴</p> : null}
         {note ? <p className="success-note">{note}</p> : null}
-        <button type="button" className="pay-btn" onClick={onClose}>
-          {failed ? "Зрозуміло" : "Готово"}
-        </button>
+        {onRenew ? (
+          <div className="success-actions">
+            <button type="button" className="pay-btn primary" onClick={onRenew}>
+              <span>Поновити абонемент</span>
+            </button>
+            <button type="button" className="pay-btn" onClick={onClose}>
+              Пізніше
+            </button>
+          </div>
+        ) : (
+          <button type="button" className="pay-btn" onClick={onClose}>
+            {failed ? "Зрозуміло" : "Готово"}
+          </button>
+        )}
       </article>
     </div>
   );

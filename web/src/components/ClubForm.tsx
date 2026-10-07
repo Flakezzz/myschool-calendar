@@ -115,6 +115,27 @@ export function ClubForm({ initial, isNew, closing, saving, error, onClose, onSa
             </div>
           </label>
 
+          <label>
+            Посилання на зустріч
+            <input
+              type="url"
+              inputMode="url"
+              placeholder="https://meet.google.com/..."
+              value={club.meetingUrl ?? ""}
+              onChange={(e) => set("meetingUrl", e.target.value)}
+            />
+          </label>
+          <label>
+            Відео від викладача
+            <input
+              type="url"
+              inputMode="url"
+              placeholder="YouTube або пряме посилання на файл"
+              value={club.videoUrl ?? ""}
+              onChange={(e) => set("videoUrl", e.target.value)}
+            />
+          </label>
+
           {error ? <p className="form-error">{error}</p> : null}
 
           <button type="submit" className="pay-btn" disabled={!canSave || saving}>

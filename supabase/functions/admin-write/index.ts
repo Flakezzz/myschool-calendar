@@ -170,6 +170,7 @@ function describe(err: unknown): string {
 const CLUB_COLUMNS = [
   "id", "title", "description", "date", "start_time", "end_time",
   "teacher", "level", "seats", "price_uah", "color",
+  "meeting_url", "video_url",
 ];
 const SUBSCRIPTION_COLUMNS = [
   "id", "title", "sessions", "description", "price_uah",

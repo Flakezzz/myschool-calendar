@@ -25,6 +25,7 @@ function fromClubRow(row: any): Club {
     taken: row.taken,
     priceUah: row.price_uah,
     color: row.color,
+    meetingUrl: row.meeting_url ?? null,
     videoUrl: row.video_url ?? null,
   };
 }

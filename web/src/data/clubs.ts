@@ -11,6 +11,8 @@ export type Club = {
   taken: number;
   priceUah: number;
   color: string;
+  /** Google Meet link, sent to attendees one hour before the class. */
+  meetingUrl: string | null;
   /** Short clip from the teacher, shown only in the expanded sheet. */
   videoUrl: string | null;
 };
