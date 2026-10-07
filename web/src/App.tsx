@@ -474,7 +474,7 @@ export function App() {
           <h2>{formatDayTitle(selected)}</h2>
           {loading ? (
             <div className="empty-day">
-              <p>Завантаження…</p>
+              <p>завантажуємо…</p>
             </div>
           ) : (
             <ClubList clubs={dayClubs} onOpen={setOpen} />

@@ -38,7 +38,7 @@ export function ClubRegistrationsSheet({
         {error ? <p className="form-error">{error}</p> : null}
 
         {loading ? (
-          <p className="sheet-desc">Завантаження…</p>
+          <p className="sheet-desc">завантажуємо…</p>
         ) : registrations.length ? (
           <>
             <dl className="facts">

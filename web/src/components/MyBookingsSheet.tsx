@@ -57,7 +57,7 @@ export function MyBookingsSheet({
         {error ? <p className="form-error">{error}</p> : null}
 
         {loading ? (
-          <p className="sheet-desc">Завантаження…</p>
+          <p className="sheet-desc">завантажуємо…</p>
         ) : (
           <>
             {passes.length ? (
@@ -70,9 +70,9 @@ export function MyBookingsSheet({
                       <li key={pass.id} className="pass-card">
                         <div className="pass-top">
                           <strong>{pass.title}</strong>
-                          <em>{left === null ? "Безліміт" : `${left} з ${pass.sessionsTotal}`}</em>
+                          <em>{left === null ? "безліміт" : `${left} з ${pass.sessionsTotal}`}</em>
                         </div>
-                        <p className="pass-meta">Діє до {formatTimestampDate(pass.expiresAt)}</p>
+                        <p className="pass-meta">діє до {formatTimestampDate(pass.expiresAt)}</p>
                       </li>
                     );
                   })}

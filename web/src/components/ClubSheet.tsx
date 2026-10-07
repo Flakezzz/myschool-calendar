@@ -53,6 +53,16 @@ export function ClubSheet({
     setFullHeight(Math.round(window.innerHeight * 0.94));
   }, [club.id]);
 
+  const [showVideo, setShowVideo] = useState(false);
+  useEffect(() => {
+    if (!expanded) {
+      setShowVideo(false);
+      return;
+    }
+    const t = setTimeout(() => setShowVideo(true), 340);
+    return () => clearTimeout(t);
+  }, [expanded]);
+
   // Keep the full height correct when the keyboard or rotation changes it.
   useEffect(() => {
     const onResize = () => setFullHeight(Math.round(window.innerHeight * 0.94));
@@ -60,8 +70,11 @@ export function ClubSheet({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  const [dragging, setDragging] = useState(false);
+
   const onDragStart = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragFrom.current = e.clientY;
+    setDragging(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
@@ -75,6 +88,7 @@ export function ClubSheet({
   const onDragEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
     const from = dragFrom.current;
     dragFrom.current = null;
+    setDragging(false);
     setDragY(0);
     if (from === null) return;
     const dy = e.clientY - from;
@@ -92,7 +106,9 @@ export function ClubSheet({
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
       <article
         ref={sheetRef}
-        className={`sheet club-sheet${expanded ? " expanded" : ""}${closing ? " closing" : ""}`}
+        className={`sheet club-sheet${expanded ? " expanded" : ""}${
+          dragging ? " is-dragging" : ""
+        }${closing ? " closing" : ""}`}
         style={{
           height: expanded ? (fullHeight ?? undefined) : (collapsedHeight ?? undefined),
           transform: dragY ? `translateY(${dragY}px)` : undefined,
@@ -149,7 +165,9 @@ export function ClubSheet({
           </div>
         </dl>
 
-        {expanded && club.videoUrl ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
+        {expanded && showVideo && club.videoUrl ? (
+          <ClubVideo url={club.videoUrl} title={club.title} />
+        ) : null}
 
         {booked ? (
           <p className="sheet-note is-booked">ти в ділі ✓</p>

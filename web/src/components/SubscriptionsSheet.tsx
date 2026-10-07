@@ -38,7 +38,7 @@ export function SubscriptionsSheet({
           <p className="sheet-note">
             <strong>
               У вас уже є абонемент «{activePass.title}»:{" "}
-              {sessionsLeft === null ? "безліміт" : `залишилось ${sessionsLeft}`}.
+              {sessionsLeft === null ? "безліміт" : `лишилось ${sessionsLeft}`}.
             </strong>{" "}
             Новий можна придбати, коли цей закінчиться.
           </p>

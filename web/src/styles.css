@@ -1063,11 +1063,21 @@ a {
 }
 
 /* The height is set inline from JS so the growth can actually animate — CSS
-   cannot transition from a content-driven height to a fixed one. */
+   cannot transition from a content-driven height to a fixed one.
+   will-change + containment keep the per-frame work off the rest of the page,
+   which is what made the growth stutter. */
 .club-sheet {
-  transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms ease-out;
+  transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1);
   max-height: 94vh;
   max-height: 94dvh;
+  will-change: height;
+  contain: layout;
+}
+
+/* While a finger is on the handle nothing may animate, or the sheet lags
+   behind the drag. */
+.club-sheet.is-dragging {
+  transition: none;
 }
 
 .club-sheet.expanded {
@@ -1079,20 +1089,18 @@ a {
   flex: 0 0 auto;
 }
 
-/* Expanded, the clip sits at the bottom of the card — the pass note and the
-   action buttons stay under it, everything else stays above. */
-.club-sheet.expanded .club-video {
+/* Expanded, the clip sits low in the card with the pass note and buttons
+   under it. Two auto margins share the leftover space evenly, so the gap
+   above the clip is half of what a single one gave. */
+.club-sheet.expanded .club-video,
+.club-sheet.expanded .sheet-actions {
   margin-top: auto;
 }
 
-/* margin-top:auto collapses to 0 when the card is already full, so the gap
-   above the clip is guaranteed by the block before it. */
+/* margin-top:auto collapses to 0 when the card is already full, so a small
+   gap above the clip is guaranteed by the block before it. */
 .club-sheet.expanded .facts {
-  margin-bottom: 18px;
-}
-
-.club-sheet.expanded:not(:has(.club-video)) .sheet-actions {
-  margin-top: auto;
+  margin-bottom: 9px;
 }
 
 /* Collapsed, a long description is trimmed so the actions stay reachable. */
@@ -1104,7 +1112,7 @@ a {
 }
 
 .club-video {
-  margin: 18px 0;
+  margin: 9px 0;
   border-radius: 16px;
   overflow: hidden;
   background: var(--btn-bg);
