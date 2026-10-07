@@ -472,6 +472,24 @@ a {
   animation: sheet-slide-out 220ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
+/* Fills the strip the club card uncovers while it is dragged or slid upward.
+   Its height is set from JS to match the card. */
+.sheet-skirt {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(430px, 100%);
+  height: 0;
+  background: var(--card);
+  pointer-events: none;
+}
+
+/* On the way out the card slides down past it, so it must go too. */
+.sheet-backdrop.closing .sheet-skirt {
+  display: none;
+}
+
 .sheet-handle {
   width: 42px;
   height: 4px;

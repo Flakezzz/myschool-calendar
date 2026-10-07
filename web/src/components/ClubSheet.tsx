@@ -40,7 +40,15 @@ export function ClubSheet({
   const expandedRef = useRef(false);
   const dragFrom = useRef<number | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
+  const skirtRef = useRef<HTMLDivElement | null>(null);
   const lastHeight = useRef(0);
+
+  // The strip behind the card is kept exactly as tall as the card: shorter
+  // and it would not cover the gap a drag opens, taller and it would stick
+  // out above the card's top edge.
+  const setSkirt = (h: number) => {
+    if (skirtRef.current) skirtRef.current.style.height = `${h}px`;
+  };
 
   // Both heights are worked out once, while the card is still closed and
   // nothing is moving. Measuring costs a forced re-layout, and doing that on
@@ -68,6 +76,7 @@ export function ClubSheet({
     const target = wasExpanded ? expandedHeight : collapsed;
     el.style.height = `${target}px`;
     lastHeight.current = target;
+    setSkirt(target);
   };
 
   useLayoutEffect(measureBoth, [club.id]);
@@ -87,6 +96,9 @@ export function ClubSheet({
     const target = expanded ? heights.current.expanded : heights.current.collapsed;
     const previous = lastHeight.current;
     lastHeight.current = target;
+    // Cover with the taller of the two, so the strip spans the whole gap in
+    // either direction for the length of the slide.
+    setSkirt(Math.max(previous, target));
     if (previous === 0 || previous === target) return;
 
     el.style.transition = "none";
@@ -152,6 +164,10 @@ export function ClubSheet({
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
+      {/* Dragging the card up lifts it off the bottom edge and would show the
+          backdrop through the gap. This strip sits underneath in the card's
+          own colour, hidden behind it at rest. */}
+      <div className="sheet-skirt" aria-hidden="true" ref={skirtRef} />
       <article
         ref={sheetRef}
         className={`sheet club-sheet${expanded ? " expanded" : ""}${closing ? " closing" : ""}`}
