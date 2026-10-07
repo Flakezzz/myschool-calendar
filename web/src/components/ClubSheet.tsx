@@ -40,15 +40,12 @@ export function ClubSheet({
   const expandedRef = useRef(false);
   const dragFrom = useRef<number | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
-  const skirtRef = useRef<HTMLDivElement | null>(null);
   const lastHeight = useRef(0);
 
-  // The strip behind the card is kept exactly as tall as the card: shorter
-  // and it would not cover the gap a drag opens, taller and it would stick
-  // out above the card's top edge.
-  const setSkirt = (h: number) => {
-    if (skirtRef.current) skirtRef.current.style.height = `${h}px`;
-  };
+/** The card is this much taller than it looks: the extra sits below the
+ * screen so lifting the card never uncovers the backdrop. Keep in step with
+ * --sheet-skirt in the stylesheet. */
+const SKIRT = 140;
 
   // Both heights are worked out once, while the card is still closed and
   // nothing is moving. Measuring costs a forced re-layout, and doing that on
@@ -59,7 +56,7 @@ export function ClubSheet({
   const measureBoth = () => {
     const el = sheetRef.current;
     if (!el) return;
-    const cap = Math.round(window.innerHeight * 0.94);
+    const cap = Math.round(window.innerHeight * 0.94) + SKIRT;
     const wasExpanded = el.classList.contains("expanded");
 
     el.style.transition = "none";
@@ -76,7 +73,6 @@ export function ClubSheet({
     const target = wasExpanded ? expandedHeight : collapsed;
     el.style.height = `${target}px`;
     lastHeight.current = target;
-    setSkirt(target);
   };
 
   useLayoutEffect(measureBoth, [club.id]);
@@ -96,14 +92,14 @@ export function ClubSheet({
     const target = expanded ? heights.current.expanded : heights.current.collapsed;
     const previous = lastHeight.current;
     lastHeight.current = target;
-    // Cover with the taller of the two, so the strip spans the whole gap in
-    // either direction for the length of the slide.
-    setSkirt(Math.max(previous, target));
     if (previous === 0 || previous === target) return;
 
     el.style.transition = "none";
     el.style.height = `${target}px`;
-    el.style.transform = `translateY(${target - previous}px)`;
+    // Shrinking lifts the card; going up further than the hidden tail would
+    // show the backdrop underneath, so the slide starts no higher than that.
+    const shift = Math.max(target - previous, -SKIRT);
+    el.style.transform = `translateY(${shift}px)`;
     void el.offsetHeight;
     el.style.transition = "transform 300ms cubic-bezier(0.16, 1, 0.3, 1)";
     el.style.transform = "translateY(0)";
@@ -164,10 +160,6 @@ export function ClubSheet({
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
-      {/* Dragging the card up lifts it off the bottom edge and would show the
-          backdrop through the gap. This strip sits underneath in the card's
-          own colour, hidden behind it at rest. */}
-      <div className="sheet-skirt" aria-hidden="true" ref={skirtRef} />
       <article
         ref={sheetRef}
         className={`sheet club-sheet${expanded ? " expanded" : ""}${closing ? " closing" : ""}`}
