@@ -256,13 +256,24 @@ a {
   font-weight: 800;
 }
 
-/* A light outline marks days the person is already booked on. */
-.cell.booked:not(.selected) {
-  box-shadow: inset 0 0 0 1.5px var(--navy-dim);
+/* A light outline marks days the person is already booked on. Drawn as a
+   pseudo-element inset from the cell edges, so the square sits snugly round
+   the date instead of filling the whole tap target. */
+.cell {
+  position: relative;
 }
 
-.cell.booked.selected {
-  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.65);
+.cell.booked::before {
+  content: "";
+  position: absolute;
+  inset: 5px 9px;
+  border: 1.5px solid var(--navy-dim);
+  border-radius: 9px;
+  pointer-events: none;
+}
+
+.cell.booked.selected::before {
+  border-color: rgba(255, 255, 255, 0.6);
 }
 
 .dots {
@@ -1048,17 +1059,15 @@ a {
   cursor: grabbing;
 }
 
+/* The height is set inline from JS so the growth can actually animate — CSS
+   cannot transition from a content-driven height to a fixed one. */
 .club-sheet {
-  transition: height 280ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms ease-out;
-}
-
-/* Expanded it really fills the screen, so the description and the clip have
-   room; the content scrolls inside while the grab bar stays put. */
-.club-sheet.expanded {
-  height: 94vh;
-  height: 94dvh;
+  transition: height 320ms cubic-bezier(0.16, 1, 0.3, 1), transform 160ms ease-out;
   max-height: 94vh;
   max-height: 94dvh;
+}
+
+.club-sheet.expanded {
   display: flex;
   flex-direction: column;
 }
@@ -1099,4 +1108,24 @@ a {
 .success-actions {
   display: grid;
   gap: 8px;
+}
+
+/* The "your link is coming" line, between the date and the pass counter. */
+.success-calm {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+/* Small explanation under a form field. */
+.field-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: 0;
 }

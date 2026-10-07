@@ -15,10 +15,26 @@ const COLORS = ["#E85D4C", "#3BA99C", "#E8B86D", "#1B4D6E", "#8E5FD1"];
 
 export function ClubForm({ initial, isNew, closing, saving, error, onClose, onSave }: Props) {
   const [club, setClub] = useState<Club>(initial);
+  // Numbers are kept as text while typing so the field can be genuinely
+  // empty — a bound 0 is impossible to clear and has to be selected first.
+  const [seatsText, setSeatsText] = useState(isNew ? "" : String(initial.seats));
+  const [priceText, setPriceText] = useState(isNew ? "" : String(initial.priceUah));
+
+  const onNumber = (
+    raw: string,
+    setText: (v: string) => void,
+    key: "seats" | "priceUah",
+  ) => {
+    const digits = raw.replace(/[^0-9]/g, "");
+    setText(digits);
+    set(key, digits === "" ? 0 : Number(digits));
+  };
 
   const set = <K extends keyof Club>(key: K, value: Club[K]) => setClub((c) => ({ ...c, [key]: value }));
 
   const canSave =
+    priceText !== "" &&
+    seatsText !== "" &&
     club.title.trim() &&
     club.date &&
     club.startTime &&
@@ -81,20 +97,26 @@ export function ClubForm({ initial, isNew, closing, saving, error, onClose, onSa
             <label>
               Місць
               <input
-                type="number"
-                min={1}
-                value={club.seats}
-                onChange={(e) => set("seats", Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                placeholder="10"
+                value={seatsText}
+                onChange={(e) => onNumber(e.target.value, setSeatsText, "seats")}
                 required
               />
             </label>
             <label>
-              Ціна, ₴
+              Ціна, грн
               <input
-                type="number"
-                min={0}
-                value={club.priceUah}
-                onChange={(e) => set("priceUah", Number(e.target.value))}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                placeholder="300"
+                value={priceText}
+                onChange={(e) => onNumber(e.target.value, setPriceText, "priceUah")}
                 required
               />
             </label>
@@ -124,16 +146,20 @@ export function ClubForm({ initial, isNew, closing, saving, error, onClose, onSa
               value={club.meetingUrl ?? ""}
               onChange={(e) => set("meetingUrl", e.target.value)}
             />
+            <small className="field-hint">прийде учасникам за годину до уроку</small>
           </label>
           <label>
-            Відео від викладача
+            Відео від тічера
             <input
               type="url"
               inputMode="url"
-              placeholder="YouTube або пряме посилання на файл"
+              placeholder="кидай лінк на відео"
               value={club.videoUrl ?? ""}
               onChange={(e) => set("videoUrl", e.target.value)}
             />
+            <small className="field-hint">
+              ютуб, гугл драйв або пряме посилання на mp4 / webm / mov — покажемо в описі клаба
+            </small>
           </label>
 
           {error ? <p className="form-error">{error}</p> : null}

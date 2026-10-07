@@ -1,4 +1,4 @@
-import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Club } from "../data/clubs";
 import { ShareIcon } from "./Icons";
 import { ClubVideo } from "./ClubVideo";
@@ -40,6 +40,26 @@ export function ClubSheet({
   const [dragY, setDragY] = useState(0);
   const dragFrom = useRef<number | null>(null);
 
+  // Both heights have to be real pixel values for the growth to animate:
+  // a transition cannot run from a content-driven height to a fixed one.
+  const sheetRef = useRef<HTMLElement | null>(null);
+  const [collapsedHeight, setCollapsedHeight] = useState<number | null>(null);
+  const [fullHeight, setFullHeight] = useState<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = sheetRef.current;
+    if (!el) return;
+    setCollapsedHeight(el.getBoundingClientRect().height);
+    setFullHeight(Math.round(window.innerHeight * 0.94));
+  }, [club.id]);
+
+  // Keep the full height correct when the keyboard or rotation changes it.
+  useEffect(() => {
+    const onResize = () => setFullHeight(Math.round(window.innerHeight * 0.94));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
   const onDragStart = (e: ReactPointerEvent<HTMLDivElement>) => {
     dragFrom.current = e.clientY;
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -71,8 +91,12 @@ export function ClubSheet({
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
       <article
+        ref={sheetRef}
         className={`sheet club-sheet${expanded ? " expanded" : ""}${closing ? " closing" : ""}`}
-        style={dragY ? { transform: `translateY(${dragY}px)` } : undefined}
+        style={{
+          height: expanded ? (fullHeight ?? undefined) : (collapsedHeight ?? undefined),
+          transform: dragY ? `translateY(${dragY}px)` : undefined,
+        }}
         onClick={(e) => e.stopPropagation()}
       >
         <div

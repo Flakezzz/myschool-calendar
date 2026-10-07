@@ -2,6 +2,8 @@ type Props = {
   heading?: string;
   title: string;
   subtitle: string;
+  /** Reassurance shown right after the date, before the pass counter. */
+  calm?: string;
   note?: string;
   priceUah?: number;
   failed?: boolean;
@@ -15,6 +17,7 @@ export function PaymentSuccessSheet({
   heading,
   title,
   subtitle,
+  calm,
   note,
   priceUah,
   failed = false,
@@ -32,6 +35,7 @@ export function PaymentSuccessSheet({
         <h2>{heading ?? (failed ? "не вдалося записатися" : "санчізес")}</h2>
         <p className="success-item">{title}</p>
         <p className="success-sub">{subtitle}</p>
+        {calm ? <p className="success-calm">{calm}</p> : null}
         {priceUah !== undefined ? <p className="success-price">{priceUah} грн</p> : null}
         {note ? <p className="success-note">{note}</p> : null}
         {onRenew ? (

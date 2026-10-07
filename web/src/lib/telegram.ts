@@ -94,7 +94,7 @@ export function confirmCancelBooking(message: string): Promise<boolean> {
           title: "ти куди...?",
           message,
           buttons: [
-            { id: "leave", type: "destructive", text: "куди нода" },
+            { id: "leave", type: "destructive", text: "куди нада" },
             { id: "stay", type: "default", text: "жартую так" },
           ],
         },

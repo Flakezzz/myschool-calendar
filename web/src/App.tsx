@@ -45,6 +45,7 @@ type SuccessInfo = {
   heading?: string;
   title: string;
   subtitle: string;
+  calm?: string;
   note?: string;
   priceUah?: number;
   failed?: boolean;
@@ -290,6 +291,7 @@ export function App() {
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
+        calm: "не переживай, лінк на зустріч прийде за годину до уроку",
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
@@ -560,6 +562,7 @@ export function App() {
           title={shownSuccess.title}
           subtitle={shownSuccess.subtitle}
           note={shownSuccess.note}
+          calm={shownSuccess.calm}
           priceUah={shownSuccess.priceUah}
           failed={shownSuccess.failed}
           onRenew={
