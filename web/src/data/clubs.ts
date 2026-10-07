@@ -11,4 +11,6 @@ export type Club = {
   taken: number;
   priceUah: number;
   color: string;
+  /** Short clip from the teacher, shown only in the expanded sheet. */
+  videoUrl: string | null;
 };

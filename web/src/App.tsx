@@ -79,6 +79,7 @@ function blankClub(): Club {
     taken: 0,
     priceUah: 0,
     color: "#E85D4C",
+    videoUrl: null,
   };
 }
 

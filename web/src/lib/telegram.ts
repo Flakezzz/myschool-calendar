@@ -5,6 +5,10 @@ export function initTelegram() {
   if (!tg) return;
   tg.ready();
   tg.expand();
+  // Without this, dragging our own sheets upward also drags the Telegram
+  // window and can close the app. Added in Bot API 7.7 — older clients simply
+  // do not expose it, and the sheet still works, just with that conflict.
+  tg.disableVerticalSwipes?.();
 }
 
 export function syncTelegramTheme(mode: "light" | "dark") {

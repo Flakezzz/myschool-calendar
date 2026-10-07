@@ -1,5 +1,7 @@
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Club } from "../data/clubs";
 import { ShareIcon } from "./Icons";
+import { ClubVideo } from "./ClubVideo";
 import { passSessionsLeft, type MyPass } from "../lib/api";
 
 type Props = {
@@ -31,6 +33,36 @@ export function ClubSheet({
   onShare,
   minSubPrice,
 }: Props) {
+  // Dragging the handle upward opens the sheet full height, which is where
+  // the long description and the teacher's clip live. A plain tap toggles it
+  // too, so it works without a touch screen.
+  const [expanded, setExpanded] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const dragFrom = useRef<number | null>(null);
+
+  const onDragStart = (e: ReactPointerEvent<HTMLDivElement>) => {
+    dragFrom.current = e.clientY;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onDragMove = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (dragFrom.current === null) return;
+    const dy = e.clientY - dragFrom.current;
+    // Follow the finger, but never further up than a small overshoot.
+    setDragY(expanded ? Math.max(dy, 0) : Math.max(Math.min(dy, 120), -80));
+  };
+
+  const onDragEnd = (e: ReactPointerEvent<HTMLDivElement>) => {
+    const from = dragFrom.current;
+    dragFrom.current = null;
+    setDragY(0);
+    if (from === null) return;
+    const dy = e.clientY - from;
+    if (dy < -40) setExpanded(true);
+    else if (dy > 60) (expanded ? setExpanded(false) : onClose());
+    else setExpanded((v) => !v);
+  };
+
   const left = club.seats - club.taken;
   const full = left <= 0;
   const booked = !!bookedRegistrationId;
@@ -38,8 +70,21 @@ export function ClubSheet({
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
-      <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
-        <div className="sheet-handle" />
+      <article
+        className={`sheet club-sheet${expanded ? " expanded" : ""}${closing ? " closing" : ""}`}
+        style={dragY ? { transform: `translateY(${dragY}px)` } : undefined}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div
+          className="sheet-grab"
+          role="presentation"
+          onPointerDown={onDragStart}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragEnd}
+        >
+          <div className="sheet-handle" />
+        </div>
         <header>
           <h2>{club.title}</h2>
           <div className="sheet-head-actions">
@@ -56,7 +101,9 @@ export function ClubSheet({
             </button>
           </div>
         </header>
-        <p className="sheet-desc">{club.description}</p>
+        <p className={`sheet-desc${expanded ? " is-full" : ""}`}>{club.description}</p>
+
+        {expanded && club.videoUrl ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
         <dl className="facts">
           <div>
             <dt>Час</dt>
