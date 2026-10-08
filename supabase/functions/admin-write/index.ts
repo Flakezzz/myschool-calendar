@@ -251,6 +251,41 @@ async function refundInvoice(invoiceId: string, amountKop: number | null) {
   return await res.json();
 }
 
+/** Someone who closed the payment page and came back should land straight
+ * on it again, not be told to wait out the fifteen-minute sweep. Returns
+ * the page to resume, or null once the stale reservation has been cleared. */
+async function resumablePayment(
+  userId: string,
+  what: { clubId?: string; subscriptionId?: string },
+): Promise<{ invoiceId: string; pageUrl: string } | null> {
+  const { data } = await supabase.rpc("find_pending_payment", {
+    p_user_id: userId,
+    p_club_id: what.clubId ?? null,
+    p_subscription_id: what.subscriptionId ?? null,
+  });
+  if (!data?.invoice_id) return null;
+
+  // Monobank is the authority on whether that invoice can still be paid.
+  let status = "";
+  try {
+    const res = await fetch(
+      `https://api.monobank.ua/api/merchant/invoice/status?invoiceId=${data.invoice_id}`,
+      { headers: { "X-Token": MONO_TOKEN } },
+    );
+    if (res.ok) status = (await res.json()).status ?? "";
+  } catch (err) {
+    console.error("invoice status check failed", describe(err));
+  }
+
+  if ((status === "created" || status === "processing") && data.page_url) {
+    return { invoiceId: data.invoice_id, pageUrl: data.page_url };
+  }
+
+  // Dead or unknown: drop it so a fresh attempt can start right away.
+  await supabase.rpc("drop_pending_payment", { p_invoice_id: data.invoice_id });
+  return null;
+}
+
 async function rpc(name: string, args: Record<string, unknown>): Promise<Response> {
   const { data, error } = await supabase.rpc(name, args);
   if (error) {
@@ -276,6 +311,14 @@ Deno.serve(async (req) => {
     switch (action) {
       case "book_club": {
         if (!body.clubId) return json({ error: "bad_payload" }, 400);
+
+        const resume = await resumablePayment(user.id, { clubId: body.clubId });
+        if (resume) {
+          return json({
+            ok: true,
+            result: { needs_payment: true, paid_with: "card", resumed: true, ...resume },
+          });
+        }
 
         // Holds the seat. A usable pass makes the booking real immediately;
         // otherwise the seat is pending until the money is held.
@@ -315,6 +358,7 @@ Deno.serve(async (req) => {
           p_club_id: body.clubId,
           p_amount_kop: reserved.amount_kop,
           p_reference: reserved.registration_id,
+          p_page_url: invoice.pageUrl,
         });
 
         return json({ ok: true, result: { ...reserved, invoiceId: invoice.invoiceId, pageUrl: invoice.pageUrl } });
@@ -336,6 +380,11 @@ Deno.serve(async (req) => {
 
       case "buy_subscription": {
         if (!body.subscriptionId) return json({ error: "bad_payload" }, 400);
+
+        const resumeSub = await resumablePayment(user.id, { subscriptionId: body.subscriptionId });
+        if (resumeSub) {
+          return json({ ok: true, result: { needs_payment: true, resumed: true, ...resumeSub } });
+        }
 
         const { data: reserved, error: reserveError } = await supabase.rpc("reserve_subscription", {
           p_subscription_id: body.subscriptionId,
@@ -372,6 +421,7 @@ Deno.serve(async (req) => {
           p_club_id: null,
           p_amount_kop: reserved.amount_kop,
           p_reference: reserved.registration_id,
+          p_page_url: invoice.pageUrl,
         });
 
         return json({

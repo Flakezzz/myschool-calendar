@@ -389,7 +389,8 @@ export function App() {
           kind: "club",
           clubTitle: club.title,
           subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-          priceUah: result.pricePaidUah,
+          // A resumed payment carries no price of its own; the club knows it.
+          priceUah: result.pricePaidUah || club.priceUah,
         });
         return;
       }

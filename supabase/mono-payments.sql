@@ -573,3 +573,92 @@ end;
 $$;
 
 revoke all on function activate_paid_subscription(uuid) from public, anon, authenticated;
+
+-- --------------------------------------------------------------- STEP 10
+-- Walking away from the payment page used to lock the person out for the
+-- full fifteen minutes. Tapping again should simply carry on with the same
+-- invoice, so the page it lives at has to be remembered.
+alter table payments add column if not exists page_url text;
+
+create or replace function record_payment(
+  p_invoice_id text,
+  p_registration_id uuid,
+  p_user_id text,
+  p_club_id text,
+  p_amount_kop int,
+  p_reference text,
+  p_page_url text default null
+) returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into payments (invoice_id, registration_id, telegram_user_id, club_id,
+                        amount_kop, reference, page_url)
+  values (p_invoice_id, p_registration_id, p_user_id, p_club_id,
+          p_amount_kop, p_reference, p_page_url)
+  on conflict (invoice_id) do nothing;
+end;
+$$;
+
+revoke all on function record_payment(text, uuid, text, text, int, text, text) from public, anon, authenticated;
+grant execute on function record_payment(text, uuid, text, text, int, text, text) to service_role;
+
+/** The unfinished payment for this exact thing, if there is one. */
+create or replace function find_pending_payment(
+  p_user_id text,
+  p_club_id text default null,
+  p_subscription_id text default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v record;
+begin
+  select p.invoice_id, p.page_url, p.registration_id
+  into v
+  from payments p
+  join registrations r on r.id = p.registration_id
+  where p.telegram_user_id = p_user_id
+    and p.status in ('created', 'processing')
+    and r.payment_state = 'pending'
+    and (
+      (p_club_id is not null and r.club_id = p_club_id)
+      or (p_subscription_id is not null and r.subscription_id = p_subscription_id)
+    )
+  order by p.created_at desc
+  limit 1;
+
+  if not found then
+    return null;
+  end if;
+  return jsonb_build_object('invoice_id', v.invoice_id, 'page_url', v.page_url,
+                            'registration_id', v.registration_id);
+end;
+$$;
+
+revoke all on function find_pending_payment(text, text, text) from public, anon, authenticated;
+grant execute on function find_pending_payment(text, text, text) to service_role;
+
+/** Throws away a reservation whose invoice can no longer be paid, so the
+ * person can start a clean one instead of waiting out the sweep. */
+create or replace function drop_pending_payment(p_invoice_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_reg uuid;
+begin
+  select registration_id into v_reg from payments where invoice_id = p_invoice_id;
+  delete from registrations where id = v_reg and payment_state = 'pending';
+  update payments set status = 'expired', updated_at = now() where invoice_id = p_invoice_id;
+end;
+$$;
+
+revoke all on function drop_pending_payment(text) from public, anon, authenticated;
+grant execute on function drop_pending_payment(text) to service_role;

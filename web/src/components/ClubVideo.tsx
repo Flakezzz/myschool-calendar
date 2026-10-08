@@ -26,7 +26,9 @@ export function ClubVideo({ url, title }: Props) {
   const id = youtubeId(url);
   return id ? (
     <iframe
-      src={`https://www.youtube-nocookie.com/embed/${id}`}
+      // enablejsapi lets the sheet pause it when the card is collapsed;
+      // without it the video would keep playing out of sight.
+      src={`https://www.youtube-nocookie.com/embed/${id}?enablejsapi=1`}
       title={`Відео: ${title}`}
       allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
       allowFullScreen
