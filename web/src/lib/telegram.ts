@@ -69,6 +69,14 @@ export async function shareClub(clubId: string, title: string): Promise<"shared"
   }
 }
 
+/** Monobank's own page, opened over the app rather than inside it: the Mini
+ * App must stay alive so it can notice when the payment lands. */
+export function openPaymentPage(url: string) {
+  const tg = window.Telegram?.WebApp;
+  if (tg?.openLink) tg.openLink(url);
+  else window.open(url, "_blank", "noopener");
+}
+
 /** The club id carried by a shared link, when the app was opened through one. */
 export function getStartParam(): string | null {
   return window.Telegram?.WebApp?.initDataUnsafe?.start_param ?? null;

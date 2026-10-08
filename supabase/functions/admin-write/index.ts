@@ -185,6 +185,52 @@ function pick(row: Record<string, unknown>, allowed: string[]): Record<string, u
 
 /** Calls one of the SQL functions from supabase/bookings.sql, translating
  * its intentional exceptions into a code the UI can branch on. */
+const MONO_TOKEN = Deno.env.get("MONO_X_TOKEN") ?? "";
+const MONO_WEBHOOK_URL = Deno.env.get("MONO_WEBHOOK_URL") ?? "";
+const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "";
+
+/** Creates a Monobank invoice that holds the money rather than taking it:
+ * the hold is released for free if the booking falls through, and is only
+ * captured once the lesson has happened. */
+async function createInvoice(opts: {
+  amountKop: number;
+  reference: string;
+  clubId: string;
+  clubTitle: string;
+}): Promise<{ invoiceId: string; pageUrl: string }> {
+  const res = await fetch("https://api.monobank.ua/api/merchant/invoice/create", {
+    method: "POST",
+    headers: { "X-Token": MONO_TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: opts.amountKop,
+      ccy: 980,
+      // The seat is released after 15 minutes, so the invoice must not
+      // outlive it — otherwise someone pays for a seat already given away.
+      validity: 900,
+      paymentType: "hold",
+      webHookUrl: MONO_WEBHOOK_URL || undefined,
+      redirectUrl: WEBAPP_URL || undefined,
+      merchantPaymInfo: {
+        reference: opts.reference,
+        destination: `Клаб «${opts.clubTitle}»`,
+        // Required once fiscalisation is switched on, and harmless before.
+        basketOrder: [
+          {
+            name: opts.clubTitle,
+            qty: 1,
+            sum: opts.amountKop,
+            total: opts.amountKop,
+            code: opts.clubId,
+            unit: "шт.",
+          },
+        ],
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`mono ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
 async function rpc(name: string, args: Record<string, unknown>): Promise<Response> {
   const { data, error } = await supabase.rpc(name, args);
   if (error) {
@@ -208,14 +254,65 @@ Deno.serve(async (req) => {
 
     // ------------------------------------------------ actions for any user
     switch (action) {
-      case "book_club":
+      case "book_club": {
         if (!body.clubId) return json({ error: "bad_payload" }, 400);
-        return await rpc("book_club", {
+
+        // Holds the seat. A usable pass makes the booking real immediately;
+        // otherwise the seat is pending until the money is held.
+        const { data: reserved, error: reserveError } = await supabase.rpc("reserve_club", {
           p_club_id: body.clubId,
           p_user_id: user.id,
           p_first_name: user.firstName,
           p_username: user.username,
         });
+        if (reserveError) {
+          const code = dbErrorCode(describe(reserveError));
+          if (code) return json({ error: code }, 409);
+          throw reserveError;
+        }
+        if (!reserved.needs_payment) return json({ ok: true, result: reserved });
+
+        // The amount comes from the database, never from the caller.
+        let invoice;
+        try {
+          invoice = await createInvoice({
+            amountKop: reserved.amount_kop,
+            reference: reserved.registration_id,
+            clubId: body.clubId,
+            clubTitle: reserved.club_title,
+          });
+        } catch (err) {
+          // No invoice means no way to pay, so the seat must not stay held.
+          await supabase.from("registrations").delete().eq("id", reserved.registration_id);
+          console.error("invoice create failed", describe(err));
+          return json({ error: "payment_unavailable" }, 502);
+        }
+
+        await supabase.rpc("record_payment", {
+          p_invoice_id: invoice.invoiceId,
+          p_registration_id: reserved.registration_id,
+          p_user_id: user.id,
+          p_club_id: body.clubId,
+          p_amount_kop: reserved.amount_kop,
+          p_reference: reserved.registration_id,
+        });
+
+        return json({ ok: true, result: { ...reserved, invoiceId: invoice.invoiceId, pageUrl: invoice.pageUrl } });
+      }
+
+      case "payment_status": {
+        if (!body.invoiceId) return json({ error: "bad_payload" }, 400);
+        // Scoped to the caller, so nobody can read someone else's payment.
+        const { data, error } = await supabase
+          .from("payments")
+          .select("invoice_id, status, registration_id")
+          .eq("invoice_id", body.invoiceId)
+          .eq("telegram_user_id", user.id)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) return json({ error: "payment_not_found" }, 404);
+        return json({ ok: true, result: data });
+      }
 
       case "buy_subscription":
         if (!body.subscriptionId) return json({ error: "bad_payload" }, 400);

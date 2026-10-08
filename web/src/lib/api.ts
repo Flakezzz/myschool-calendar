@@ -28,6 +28,7 @@ type Action =
   | "buy_subscription"
   | "cancel_booking"
   | "my_bookings"
+  | "payment_status"
   | "am_i_admin";
 
 async function call(action: Action, payload: unknown, table?: "clubs" | "subscriptions"): Promise<any> {
@@ -178,9 +179,13 @@ export async function fetchMine(): Promise<Mine> {
 }
 
 export type BookResult = {
-  paidWith: "cash" | "subscription";
+  paidWith: "cash" | "subscription" | "card";
   pricePaidUah: number;
   sessionsLeft: number | null;
+  /** True when the seat is held but the money still has to be paid. */
+  needsPayment: boolean;
+  invoiceId: string | null;
+  pageUrl: string | null;
 };
 
 export async function bookClub(clubId: string): Promise<BookResult> {
@@ -189,7 +194,25 @@ export async function bookClub(clubId: string): Promise<BookResult> {
     paidWith: data.result?.paid_with ?? "cash",
     pricePaidUah: data.result?.price_paid_uah ?? 0,
     sessionsLeft: data.result?.sessions_left ?? null,
+    needsPayment: data.result?.needs_payment === true,
+    invoiceId: data.result?.invoiceId ?? null,
+    pageUrl: data.result?.pageUrl ?? null,
   };
+}
+
+/** Monobank invoice states; only the webhook can move them. */
+export type PaymentStatus =
+  | "created"
+  | "processing"
+  | "hold"
+  | "success"
+  | "failure"
+  | "reversed"
+  | "expired";
+
+export async function paymentStatus(invoiceId: string): Promise<PaymentStatus> {
+  const data = await call("payment_status", { invoiceId });
+  return (data.result?.status ?? "created") as PaymentStatus;
 }
 
 export type CancelResult = { sessionBurned: boolean };

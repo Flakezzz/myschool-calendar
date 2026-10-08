@@ -23,6 +23,7 @@ import {
   fetchIsAdmin,
   fetchMine,
   nextPass,
+  paymentStatus,
   saveClub,
   type ClubRegistration,
   type Mine,
@@ -36,6 +37,7 @@ import {
   getStartParam,
   getTelegramUserId,
   isFallbackAdmin,
+  openPaymentPage,
   shareClub,
 } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
@@ -280,6 +282,33 @@ export function App() {
     });
   };
 
+  /** Waits for Monobank to tell the server what happened. The redirect back
+   * into the app proves nothing — only the webhook does — so the app asks
+   * the server, and asks again the moment the person returns to it. */
+  const waitForPayment = async (invoiceId: string): Promise<string> => {
+    const deadline = Date.now() + 15 * 60 * 1000;
+    while (Date.now() < deadline) {
+      try {
+        const status = await paymentStatus(invoiceId);
+        if (status !== "created" && status !== "processing") return status;
+      } catch (err) {
+        console.error("payment status check failed", err);
+      }
+      await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 2500);
+        const onVisible = () => {
+          if (document.visibilityState === "visible") {
+            clearTimeout(timer);
+            document.removeEventListener("visibilitychange", onVisible);
+            resolve(undefined);
+          }
+        };
+        document.addEventListener("visibilitychange", onVisible);
+      });
+    }
+    return "expired";
+  };
+
   const onPay = async (club: Club) => {
     if (!inTelegram) return demoNotice(club.title);
 
@@ -287,6 +316,41 @@ export function App() {
     try {
       const result = await bookClub(club.id);
       setOpen(null);
+
+      if (result.needsPayment && result.pageUrl && result.invoiceId) {
+        openPaymentPage(result.pageUrl);
+        setSuccess({
+          heading: "чекаємо оплату",
+          title: club.title,
+          subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime}`,
+          calm: "місце тримаємо 15 хвилин — як оплатиш, тут усе оновиться саме",
+        });
+
+        const status = await waitForPayment(result.invoiceId);
+        await Promise.all([reloadClubs(), reloadMine()]);
+
+        if (status === "hold" || status === "success") {
+          setSuccess({
+            heading: "санчізес",
+            title: club.title,
+            subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
+            calm: "не переживай, лінк на зустріч прийде за годину до уроку",
+            priceUah: result.pricePaidUah,
+          });
+        } else {
+          setSuccess({
+            heading: status === "expired" ? "час вийшов" : "оплата не пройшла",
+            title: club.title,
+            subtitle:
+              status === "expired"
+                ? "місце звільнили, бо оплата не дійшла за 15 хвилин — спробуй ще раз"
+                : "гроші не списались, місце звільнили — спробуй ще раз",
+            failed: true,
+          });
+        }
+        return;
+      }
+
       setSuccess({
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
