@@ -262,7 +262,21 @@ begin
     raise exception 'payment_not_found';
   end if;
 
-  -- Terminal states never change again.
+  -- A payment that lands after we gave up on it is the dangerous case: the
+  -- sweep has already written 'expired' and freed the seat, so treating the
+  -- webhook as a duplicate would quietly keep the money. Refund instead.
+  if v_old in ('expired', 'failure') and p_status in ('success', 'hold') then
+    update payments set status = p_status, refunded_at = now(), updated_at = now()
+    where invoice_id = p_invoice_id;
+    perform notify_admins(
+      '⚠️ Оплата без запису: ' || p_invoice_id || chr(10)
+      || 'Гроші прийшли після того, як місце вже звільнили — повертаємо автоматично. Варто перевірити.'
+    );
+    return jsonb_build_object('invoice_id', p_invoice_id, 'status', p_status,
+                              'repeat', false, 'orphan', true);
+  end if;
+
+  -- Otherwise a terminal state never changes again.
   if v_old in ('success', 'failure', 'reversed', 'expired') then
     return jsonb_build_object('invoice_id', p_invoice_id, 'status', v_old, 'repeat', true);
   end if;
@@ -272,6 +286,21 @@ begin
   if p_status in ('hold', 'success') then
     update registrations set payment_state = 'confirmed'
     where id = v_reg_id and payment_state = 'pending';
+
+    -- Nothing was confirmed: the reservation is gone, released by the sweep
+    -- or cancelled, while the money still arrived. Keeping it would be
+    -- taking payment for a seat the person does not have, so the caller is
+    -- told to refund and the admins are told a human should look.
+    if not found then
+      update payments set refunded_at = now(), updated_at = now()
+      where invoice_id = p_invoice_id;
+      perform notify_admins(
+        '⚠️ Оплата без запису: ' || p_invoice_id || chr(10)
+        || 'Гроші прийшли, але місця вже не було — повертаємо автоматично. Варто перевірити.'
+      );
+      return jsonb_build_object('invoice_id', p_invoice_id, 'status', p_status,
+                                'repeat', false, 'orphan', true);
+    end if;
   elsif p_status in ('failure', 'expired', 'reversed') then
     -- Deleting frees the seat through trg_release_club_seat.
     delete from registrations where id = v_reg_id and payment_state = 'pending';
@@ -303,7 +332,11 @@ begin
     select invoice_id, registration_id
     from payments
     where status in ('created', 'processing')
-      and created_at < now() - interval '15 minutes'
+      -- A minute past the invoice's own 15-minute validity, so Monobank has
+      -- already refused the payment before the seat is handed to anyone else.
+      -- Without that gap a payment landing on the last second would be taken
+      -- for a seat that had just been released.
+      and created_at < now() - interval '16 minutes'
   loop
     delete from registrations where id = r.registration_id and payment_state = 'pending';
     update payments set status = 'expired', updated_at = now() where invoice_id = r.invoice_id;
@@ -323,3 +356,103 @@ exception
 end $$;
 
 select cron.schedule('release-stale-reservations', '*/2 * * * *', $$select release_stale_reservations();$$);
+
+-- ---------------------------------------------------------------- STEP 8
+-- Money is taken immediately (paymentType "debit"), so an early
+-- cancellation owes a real refund. Remembered on the payment row, which is
+-- what stops the same invoice being refunded twice.
+alter table payments add column if not exists refunded_at timestamptz;
+
+-- Cancelling now reports what the caller must refund. The 24-hour rule is
+-- the same one the FAQ states for pass visits: earlier than a day before
+-- the class the money comes back, same day it does not.
+create or replace function cancel_booking(
+  p_registration_id uuid,
+  p_user_id text
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_club_id text;
+  v_date date;
+  v_start time;
+  v_club_start timestamptz;
+  v_pass_id uuid;
+  v_paid_with text;
+  v_burned boolean := false;
+  v_invoice text;
+  v_amount int;
+  v_refund boolean := false;
+begin
+  select r.club_id, r.user_subscription_id, r.paid_with, c.date, c.start_time
+  into v_club_id, v_pass_id, v_paid_with, v_date, v_start
+  from registrations r
+  join clubs c on c.id = r.club_id
+  where r.id = p_registration_id
+    and r.telegram_user_id = p_user_id
+    and r.type = 'club';
+  if not found then
+    raise exception 'booking_not_found';
+  end if;
+
+  v_club_start := (v_date::text || ' ' || v_start::text)::timestamp
+                  at time zone 'Europe/Kyiv';
+  if v_club_start <= now() then
+    raise exception 'club_already_started';
+  end if;
+
+  -- Read the invoice before the delete: payments.registration_id is set to
+  -- null by the foreign key as soon as the registration goes.
+  select invoice_id, amount_kop into v_invoice, v_amount
+  from payments
+  where registration_id = p_registration_id
+    and status in ('success', 'hold')
+    and refunded_at is null
+  limit 1;
+
+  if v_club_start - now() < interval '24 hours' then
+    -- Inside a day: a pass visit burns, and money is not returned either.
+    if v_pass_id is not null then
+      update registrations set user_subscription_id = null where id = p_registration_id;
+      v_burned := true;
+    end if;
+    if v_paid_with = 'card' then
+      v_burned := true;
+    end if;
+  elsif v_invoice is not null then
+    v_refund := true;
+    -- Claim it now so a second cancel cannot ask for the money twice.
+    update payments set refunded_at = now(), updated_at = now() where invoice_id = v_invoice;
+  end if;
+
+  delete from registrations where id = p_registration_id;
+
+  return jsonb_build_object(
+    'club_id', v_club_id,
+    'session_burned', v_burned,
+    'refund_invoice_id', case when v_refund then v_invoice else null end,
+    'refund_amount_kop', case when v_refund then v_amount else null end
+  );
+end;
+$$;
+
+revoke all on function cancel_booking(uuid, text) from public, anon, authenticated;
+grant execute on function cancel_booking(uuid, text) to service_role;
+
+-- Called when Monobank refuses the refund, so the claim does not block a
+-- later retry by the admin.
+create or replace function mark_refund_failed(p_invoice_id text)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  update payments set refunded_at = null, updated_at = now() where invoice_id = p_invoice_id;
+end;
+$$;
+
+revoke all on function mark_refund_failed(text) from public, anon, authenticated;
+grant execute on function mark_refund_failed(text) to service_role;

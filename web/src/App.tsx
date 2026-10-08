@@ -386,14 +386,20 @@ export function App() {
     try {
       // The server decides whether the session came back: inside 24 hours it
       // burns, so never promise a refund the database did not make.
-      const { sessionBurned } = await cancelBooking(registrationId);
+      const { sessionBurned, refunded } = await cancelBooking(registrationId);
       setOpen(null);
       setSuccess({
         heading: "окей, скасували",
         title,
-        subtitle: sessionBurned
-          ? "місце звільнили, але відвідування згоріло — скасування день у день не повертається"
-          : "місце звільнили, відвідування повернули на абон",
+        subtitle:
+          refunded === true
+            ? "місце звільнили, гроші повертаються на картку"
+            : refunded === false
+              ? "місце звільнили, але гроші повернути не вийшло — напиши нам, розберемось"
+              : sessionBurned
+                ? "місце звільнили, але це було день у день — не повертається, таке правило"
+                : "місце звільнили, відвідування повернули на абон",
+        failed: refunded === false,
       });
     } catch (err) {
       setSuccess({ heading: "не вдалося скасувати", title, subtitle: errorText(err), failed: true });

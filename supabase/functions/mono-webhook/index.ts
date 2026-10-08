@@ -19,6 +19,18 @@ const supabase = createClient(
 
 const MONO_TOKEN = Deno.env.get("MONO_X_TOKEN") ?? "";
 
+/** Money that arrived for a seat nobody holds any more — released by the
+ * sweep, or cancelled a moment earlier. Keeping it would mean charging for
+ * nothing, so it goes straight back. */
+async function refund(invoiceId: string) {
+  const res = await fetch("https://api.monobank.ua/api/merchant/invoice/cancel", {
+    method: "POST",
+    headers: { "X-Token": MONO_TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify({ invoiceId, extRef: `orphan-${invoiceId}` }),
+  });
+  if (!res.ok) throw new Error(`refund ${res.status}: ${await res.text()}`);
+}
+
 /** Monobank asks that the key be cached and refetched only when a
  * verification starts failing, not on every webhook. */
 let cachedKey: CryptoKey | null = null;
@@ -121,6 +133,17 @@ Deno.serve(async (req) => {
         return new Response("ok", { status: 200 });
       }
       throw error;
+    }
+
+    if (data?.orphan) {
+      // The database has already marked it refunded so it cannot be claimed
+      // twice; if the call fails, admins were warned in the same breath.
+      try {
+        await refund(invoiceId);
+        console.log("orphan refunded", invoiceId);
+      } catch (err) {
+        console.error("orphan refund failed", invoiceId, String(err));
+      }
     }
 
     console.log("applied", JSON.stringify(data));

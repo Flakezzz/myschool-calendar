@@ -215,11 +215,18 @@ export async function paymentStatus(invoiceId: string): Promise<PaymentStatus> {
   return (data.result?.status ?? "created") as PaymentStatus;
 }
 
-export type CancelResult = { sessionBurned: boolean };
+export type CancelResult = {
+  sessionBurned: boolean;
+  /** true = money sent back, false = refund attempt failed, null = nothing to refund */
+  refunded: boolean | null;
+};
 
 export async function cancelBooking(registrationId: string): Promise<CancelResult> {
   const data = await call("cancel_booking", { registrationId });
-  return { sessionBurned: data.result?.session_burned === true };
+  return {
+    sessionBurned: data.result?.session_burned === true,
+    refunded: data.result?.refunded ?? null,
+  };
 }
 
 export type BuyResult = { title: string; sessionsTotal: number | null; expiresAt: string };

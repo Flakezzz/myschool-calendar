@@ -189,9 +189,9 @@ const MONO_TOKEN = Deno.env.get("MONO_X_TOKEN") ?? "";
 const MONO_WEBHOOK_URL = Deno.env.get("MONO_WEBHOOK_URL") ?? "";
 const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "";
 
-/** Creates a Monobank invoice that holds the money rather than taking it:
- * the hold is released for free if the booking falls through, and is only
- * captured once the lesson has happened. */
+/** Creates a Monobank invoice that charges straight away — the client's
+ * choice. The trade-off is that an early cancellation now needs a real
+ * refund through the API rather than just dropping a hold. */
 async function createInvoice(opts: {
   amountKop: number;
   reference: string;
@@ -207,7 +207,7 @@ async function createInvoice(opts: {
       // The seat is released after 15 minutes, so the invoice must not
       // outlive it — otherwise someone pays for a seat already given away.
       validity: 900,
-      paymentType: "hold",
+      paymentType: "debit",
       webHookUrl: MONO_WEBHOOK_URL || undefined,
       redirectUrl: WEBAPP_URL || undefined,
       merchantPaymInfo: {
@@ -228,6 +228,22 @@ async function createInvoice(opts: {
     }),
   });
   if (!res.ok) throw new Error(`mono ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
+/** Gives the money back. Monobank answers "processing" and settles it
+ * asynchronously, so a 200 here means accepted, not yet landed. */
+async function refundInvoice(invoiceId: string, amountKop: number | null) {
+  const res = await fetch("https://api.monobank.ua/api/merchant/invoice/cancel", {
+    method: "POST",
+    headers: { "X-Token": MONO_TOKEN, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      invoiceId,
+      ...(amountKop ? { amount: amountKop } : {}),
+      extRef: invoiceId,
+    }),
+  });
+  if (!res.ok) throw new Error(`mono refund ${res.status}: ${await res.text()}`);
   return await res.json();
 }
 
@@ -323,12 +339,35 @@ Deno.serve(async (req) => {
           p_username: user.username,
         });
 
-      case "cancel_booking":
+      case "cancel_booking": {
         if (!body.registrationId) return json({ error: "bad_payload" }, 400);
-        return await rpc("cancel_booking", {
+        const { data, error } = await supabase.rpc("cancel_booking", {
           p_registration_id: body.registrationId,
           p_user_id: user.id,
         });
+        if (error) {
+          const code = dbErrorCode(describe(error));
+          if (code) return json({ error: code }, 409);
+          throw error;
+        }
+
+        // The seat is already free; the money is a separate promise. If the
+        // refund call fails the claim is released so it can be retried,
+        // and the person is told rather than left guessing.
+        let refunded: boolean | null = null;
+        if (data?.refund_invoice_id) {
+          try {
+            await refundInvoice(data.refund_invoice_id, data.refund_amount_kop);
+            refunded = true;
+          } catch (err) {
+            console.error("refund failed", data.refund_invoice_id, describe(err));
+            await supabase.rpc("mark_refund_failed", { p_invoice_id: data.refund_invoice_id });
+            refunded = false;
+          }
+        }
+
+        return json({ ok: true, result: { ...data, refunded } });
+      }
 
       case "my_bookings": {
         // Scoped to the verified Telegram id, so one user can never see
