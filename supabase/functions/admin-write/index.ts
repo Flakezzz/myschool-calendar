@@ -139,6 +139,9 @@ function json(body: unknown, status = 200): Response {
 // message. Anything else is an unexpected failure and stays generic.
 const KNOWN_DB_ERRORS = [
   "already_booked",
+  // An invoice is still open for this club: a refusal the caller can act
+  // on, not a server fault, so it must not be reported as one.
+  "payment_pending",
   "club_full",
   "club_not_found",
   "club_already_started",
