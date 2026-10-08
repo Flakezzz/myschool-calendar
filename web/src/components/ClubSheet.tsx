@@ -47,27 +47,8 @@ export function ClubSheet({
  * --sheet-skirt in the stylesheet. */
 const SKIRT = 140;
 
-  // Folding the card away only hides the clip — it would carry on playing,
-  // with the sound coming from nowhere. Asking YouTube to pause over
-  // postMessage is unreliable, because the player ignores commands until it
-  // has finished its own handshake, so the frame is reloaded instead. That
-  // always stops it, and happens while the clip is out of sight.
-  useEffect(() => {
-    if (expanded) return;
-    const box = sheetRef.current?.querySelector(".club-video");
-    if (!box) return;
-
-    const video = box.querySelector("video");
-    if (video) {
-      video.pause();
-      video.currentTime = 0;
-    }
-
-    const frame = box.querySelector("iframe");
-    const src = frame?.getAttribute("src");
-    if (frame && src) frame.setAttribute("src", src);
-  }, [expanded]);
-
+  // The clip deliberately keeps playing when the card is folded away: the
+  // person asked for it, so they can listen while browsing other clubs.
   // Both heights are worked out once, while the card is still closed and
   // nothing is moving. Measuring costs a forced re-layout, and doing that on
   // every toggle — with a YouTube embed already inside — is what made the

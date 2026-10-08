@@ -1,17 +1,26 @@
 :root {
-  --bg: #f4efe6;
-  --card: #fffdf8;
-  --ink: #1c2a3a;
-  --muted: #6d7380;
-  --line: #e6ddd0;
-  --accent: #e85d4c;
-  --navy: #1b4d6e;
-  --navy-solid: #1b4d6e;
-  --navy-dim: #6f93ab;
-  --btn-bg: #f0e8db;
-  --sub-card-bg: #fbf7f0;
-  --seat-color: #2f7d57;
-  --shadow: 0 10px 30px rgba(28, 42, 58, 0.08);
+  /* Light theme follows the client's Figma: white paper, flat brand colours,
+     near-black text. Dark theme below is deliberately untouched. */
+  --bg: #ffffff;
+  --card: #ffffff;
+  --ink: #111111;
+  --muted: #8a8a8a;
+  --line: #e6e6e6;
+  --accent: #f0a8ce;          /* рожевий — го, записатись, найс */
+  --on-accent: #111111;       /* her buttons carry dark text, not white */
+  --yellow: #f5d547;          /* абонемент, знак питання */
+  --green: #46a758;           /* галочка оплати, жартую так */
+  --danger: #e8646e;          /* куди нада */
+  --secondary-btn: #f5d547;   /* абонемент is the yellow one in her design */
+  --secondary-btn-ink: #3a2d05;
+  --booked-bg: rgba(17, 17, 17, 0.08);
+  --navy: #111111;
+  --navy-solid: #111111;
+  --navy-dim: #c9c9c9;
+  --btn-bg: #f3f3f3;
+  --sub-card-bg: #ffffff;
+  --seat-color: #46a758;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   color-scheme: light;
   color: var(--ink);
   font-family: Manrope, system-ui, sans-serif;
@@ -30,6 +39,15 @@
     --sub-card-bg: #232a33;
     --seat-color: #4fbf8a;
     --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --accent: #e85d4c;
+    --on-accent: #ffffff;
+    --yellow: #f2c14e;
+    --green: #4fbf8a;
+    --danger: #e85d4c;
+    --navy-dim: #6f93ab;
+    --secondary-btn: #6f93ab;
+    --secondary-btn-ink: #ffffff;
+    --booked-bg: rgba(111, 147, 171, 0.3);
     color-scheme: dark;
   }
 }
@@ -45,6 +63,15 @@
   --sub-card-bg: #232a33;
   --seat-color: #4fbf8a;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --accent: #e85d4c;
+  --on-accent: #ffffff;
+  --yellow: #f2c14e;
+  --green: #4fbf8a;
+  --danger: #e85d4c;
+  --navy-dim: #6f93ab;
+  --secondary-btn: #6f93ab;
+  --secondary-btn-ink: #ffffff;
+  --booked-bg: rgba(111, 147, 171, 0.3);
   color-scheme: dark;
 }
 
@@ -272,7 +299,7 @@ a {
   place-items: center;
   /* Same corner softness as the selected day, scaled to this smaller box. */
   border-radius: 9px;
-  background: rgba(111, 147, 171, 0.3);
+  background: var(--booked-bg);
 }
 
 .cell.booked.selected .num {
@@ -530,7 +557,7 @@ a {
 }
 
 .success-icon.is-failed {
-  background: var(--accent);
+  background: var(--danger);
 }
 
 .success-sheet h2 {
@@ -603,7 +630,8 @@ a {
   min-height: 58px;
   border: 0;
   background: var(--accent);
-  color: #fff;
+  /* The light palette's buttons are pale, so white text would vanish. */
+  color: var(--on-accent);
   font-weight: 800;
   border-radius: 16px;
   padding: 10px 6px;
@@ -628,14 +656,16 @@ a {
   opacity: 0.9;
 }
 
+/* Yellow in the light design, the muted blue it has always been in dark. */
 .pay-btn.secondary {
-  background: var(--navy-dim);
+  background: var(--secondary-btn);
+  color: var(--secondary-btn-ink);
 }
 
 .pay-btn.danger {
   background: transparent;
-  border: 1.5px solid var(--accent);
-  color: var(--accent);
+  border: 1.5px solid var(--danger);
+  color: var(--danger);
 }
 
 /* Short status line, used both under the facts grid and under a header. */
@@ -1016,7 +1046,7 @@ a {
 
 /* FAQ sheet — the "?" button in "Мої клаби" opens it. */
 .faq-btn {
-  background: #f2c14e;
+  background: var(--yellow);
   color: #3a2d05;
 }
 
