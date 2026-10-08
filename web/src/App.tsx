@@ -39,6 +39,7 @@ import {
   isFallbackAdmin,
   openPaymentPage,
   shareClub,
+  takePendingPayment,
 } from "./lib/telegram";
 import { useBodyScrollLock } from "./lib/useBodyScrollLock";
 import { usePresence } from "./lib/usePresence";
@@ -258,6 +259,55 @@ export function App() {
     setOpen(club);
   }, [clubs]);
 
+  // Coming back from Monobank: the app has just booted, so it asks the
+  // server what became of the payment rather than trusting the redirect.
+  const resumedPayment = useRef(false);
+  useEffect(() => {
+    if (resumedPayment.current || !inTelegram) return;
+    const pending = takePendingPayment();
+    if (!pending) return;
+    resumedPayment.current = true;
+
+    setSuccess({
+      heading: "перевіряємо оплату",
+      title: pending.clubTitle,
+      subtitle: pending.subtitle,
+      calm: "це кілька секунд",
+    });
+
+    (async () => {
+      const status = await waitForPayment(pending.invoiceId);
+      await Promise.all([reloadClubs(), reloadMine()]);
+      if (status === "hold" || status === "success") {
+        setSuccess({
+          heading: "санчізес",
+          title: pending.clubTitle,
+          subtitle: pending.subtitle,
+          calm: "не переживай, лінк на зустріч прийде за годину до уроку",
+          priceUah: pending.priceUah,
+        });
+      } else if (status === "unknown") {
+        setSuccess({
+          heading: "не бачимо оплату",
+          title: pending.clubTitle,
+          subtitle: "зв'язок підвів — глянь у «Мої клаби», і якщо запису немає, спробуй ще раз",
+          failed: true,
+        });
+      } else {
+        setSuccess({
+          heading: status === "expired" ? "час вийшов" : "оплата не пройшла",
+          title: pending.clubTitle,
+          subtitle:
+            status === "expired"
+              ? "місце звільнили, бо оплата не дійшла за 15 хвилин — спробуй ще раз"
+              : "гроші не списались, місце звільнили — спробуй ще раз",
+          failed: true,
+        });
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inTelegram]);
+
   const onShare = async (club: Club) => {
     const result = await shareClub(club.id, club.title);
     if (result === "shared") return;
@@ -288,12 +338,17 @@ export function App() {
    * the server, and asks again the moment the person returns to it. */
   const waitForPayment = async (invoiceId: string): Promise<string> => {
     const deadline = Date.now() + 15 * 60 * 1000;
+    let failures = 0;
     while (Date.now() < deadline) {
       try {
         const status = await paymentStatus(invoiceId);
+        failures = 0;
         if (status !== "created" && status !== "processing") return status;
       } catch (err) {
         console.error("payment status check failed", err);
+        // If the server cannot be asked at all, saying "checking" for
+        // fifteen minutes is worse than admitting we do not know.
+        if (++failures >= 5) return "unknown";
       }
       await new Promise((resolve) => {
         const timer = setTimeout(resolve, 2500);
@@ -319,36 +374,15 @@ export function App() {
       setOpen(null);
 
       if (result.needsPayment && result.pageUrl && result.invoiceId) {
-        openPaymentPage(result.pageUrl);
-        setSuccess({
-          heading: "чекаємо оплату",
-          title: club.title,
-          subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime}`,
-          calm: "місце тримаємо 15 хвилин — як оплатиш, тут усе оновиться саме",
+        // Hands over to Monobank's page without leaving Telegram. The app is
+        // unloaded by that navigation, so what is needed to finish the story
+        // goes into storage and is picked up when Monobank sends us back.
+        openPaymentPage(result.pageUrl, {
+          invoiceId: result.invoiceId,
+          clubTitle: club.title,
+          subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
+          priceUah: result.pricePaidUah,
         });
-
-        const status = await waitForPayment(result.invoiceId);
-        await Promise.all([reloadClubs(), reloadMine()]);
-
-        if (status === "hold" || status === "success") {
-          setSuccess({
-            heading: "санчізес",
-            title: club.title,
-            subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-            calm: "не переживай, лінк на зустріч прийде за годину до уроку",
-            priceUah: result.pricePaidUah,
-          });
-        } else {
-          setSuccess({
-            heading: status === "expired" ? "час вийшов" : "оплата не пройшла",
-            title: club.title,
-            subtitle:
-              status === "expired"
-                ? "місце звільнили, бо оплата не дійшла за 15 хвилин — спробуй ще раз"
-                : "гроші не списались, місце звільнили — спробуй ще раз",
-            failed: true,
-          });
-        }
         return;
       }
 

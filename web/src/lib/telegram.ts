@@ -19,13 +19,110 @@ export function syncTelegramTheme(mode: "light" | "dark") {
   tg.setBackgroundColor(color);
 }
 
+// Paying means leaving the Mini App for Monobank's page and coming back.
+// Telegram injects initData only on first launch, so after that round trip
+// window.Telegram.WebApp.initData is empty and the app would look like it
+// was opened outside Telegram. The signed session is therefore kept in
+// storage for the length of the trip. It stays valid for 24 hours, which the
+// Edge Function enforces, so a few minutes away is well inside the window.
+const SESSION_KEY = "ms_tg_session";
+const PENDING_KEY = "ms_pending_payment";
+
+type StoredSession = { initData: string; userId: string };
+
+/** sessionStorage goes with the webview; localStorage is the belt to its
+ * braces in case a webview treats the return trip as a fresh context. */
+function stores(): Storage[] {
+  const out: Storage[] = [];
+  try {
+    out.push(window.sessionStorage);
+  } catch {
+    /* blocked */
+  }
+  try {
+    out.push(window.localStorage);
+  } catch {
+    /* blocked */
+  }
+  return out;
+}
+
+function readJson<T>(key: string): T | null {
+  for (const store of stores()) {
+    try {
+      const raw = store.getItem(key);
+      if (raw) return JSON.parse(raw) as T;
+    } catch {
+      /* unreadable or not ours */
+    }
+  }
+  return null;
+}
+
+function writeJson(key: string, value: unknown) {
+  const raw = JSON.stringify(value);
+  for (const store of stores()) {
+    try {
+      store.setItem(key, raw);
+    } catch {
+      /* out of space or blocked */
+    }
+  }
+}
+
+function forget(key: string) {
+  for (const store of stores()) {
+    try {
+      store.removeItem(key);
+    } catch {
+      /* nothing to do */
+    }
+  }
+}
+
+let restored: StoredSession | null | undefined;
+
+function storedSession(): StoredSession | null {
+  if (restored === undefined) restored = readJson<StoredSession>(SESSION_KEY);
+  return restored;
+}
+
 export function getTelegramUserId(): string | null {
   const id = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
-  return id ? String(id) : null;
+  if (id) return String(id);
+  return storedSession()?.userId ?? null;
 }
 
 export function getTelegramInitData(): string {
-  return window.Telegram?.WebApp?.initData ?? "";
+  const live = window.Telegram?.WebApp?.initData ?? "";
+  if (live) return live;
+  return storedSession()?.initData ?? "";
+}
+
+export type PendingPayment = {
+  invoiceId: string;
+  clubTitle: string;
+  subtitle: string;
+  priceUah: number;
+};
+
+/** Read once and dropped: whatever happens next, the app must not keep
+ * asking about a payment it has already reported. */
+export function takePendingPayment(): PendingPayment | null {
+  const pending = readJson<PendingPayment>(PENDING_KEY);
+  if (pending) forget(PENDING_KEY);
+  return pending;
+}
+
+/** Sends the person to Monobank inside Telegram rather than handing them to
+ * an external browser, which would also bring them back to the browser and
+ * not to the chat. */
+export function openPaymentPage(url: string, pending: PendingPayment) {
+  const initData = window.Telegram?.WebApp?.initData ?? "";
+  const userId = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  if (initData && userId) writeJson(SESSION_KEY, { initData, userId: String(userId) });
+  writeJson(PENDING_KEY, pending);
+  window.location.assign(url);
 }
 
 /** Fallback only, used if the server-side admin check can't be reached.
@@ -67,14 +164,6 @@ export async function shareClub(clubId: string, title: string): Promise<"shared"
   } catch {
     return "failed";
   }
-}
-
-/** Monobank's own page, opened over the app rather than inside it: the Mini
- * App must stay alive so it can notice when the payment lands. */
-export function openPaymentPage(url: string) {
-  const tg = window.Telegram?.WebApp;
-  if (tg?.openLink) tg.openLink(url);
-  else window.open(url, "_blank", "noopener");
 }
 
 /** The club id carried by a shared link, when the app was opened through one. */
