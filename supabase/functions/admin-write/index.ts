@@ -339,6 +339,9 @@ Deno.serve(async (req) => {
             .select("id, created_at, paid_with, price_paid_uah, clubs(id, title, date, start_time, end_time, teacher, color)")
             .eq("telegram_user_id", user.id)
             .eq("type", "club")
+            // A seat held for an unpaid invoice is not a booking yet, and
+            // showing it would promise something that may vanish in 15 min.
+            .eq("payment_state", "confirmed")
             .order("created_at", { ascending: false }),
           supabase
             .from("user_subscriptions")

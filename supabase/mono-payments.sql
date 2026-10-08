@@ -151,6 +151,16 @@ begin
     raise exception 'club_not_found';
   end if;
 
+  -- An unpaid reservation is not a booking, and saying "already booked"
+  -- about one is misleading: the person is mid-payment, not done.
+  if exists (
+    select 1 from registrations
+    where type = 'club' and club_id = p_club_id and telegram_user_id = p_user_id
+      and payment_state = 'pending'
+  ) then
+    raise exception 'payment_pending';
+  end if;
+
   if exists (
     select 1 from registrations
     where type = 'club' and club_id = p_club_id and telegram_user_id = p_user_id

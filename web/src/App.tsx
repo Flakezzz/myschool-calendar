@@ -59,6 +59,7 @@ const EMPTY_MINE: Mine = { bookings: [], passes: [] };
 // The database raises these on purpose; everything else is unexpected.
 const ERROR_TEXT: Record<string, string> = {
   already_booked: "ти вже тут записаний",
+  payment_pending: "оплата вже почата — заверши її або зачекай 15 хвилин, і місце звільниться",
   club_full: "місця щойно закінчились",
   club_not_found: "цього клаба більше немає",
   club_already_started: "клаб уже почався, скасувати не вийде",
