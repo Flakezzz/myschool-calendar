@@ -287,6 +287,13 @@ begin
     update registrations set payment_state = 'confirmed'
     where id = v_reg_id and payment_state = 'pending';
 
+    -- A paid pass only comes into existence here.
+    if found and exists (
+      select 1 from registrations where id = v_reg_id and type = 'subscription'
+    ) then
+      perform activate_paid_subscription(v_reg_id);
+    end if;
+
     -- Nothing was confirmed: the reservation is gone, released by the sweep
     -- or cancelled, while the money still arrived. Keeping it would be
     -- taking payment for a seat the person does not have, so the caller is
@@ -296,7 +303,7 @@ begin
       where invoice_id = p_invoice_id;
       perform notify_admins(
         '⚠️ Оплата без запису: ' || p_invoice_id || chr(10)
-        || 'Гроші прийшли, але місця вже не було — повертаємо автоматично. Варто перевірити.'
+        || 'Гроші прийшли, але запису вже не було — повертаємо автоматично. Варто перевірити.'
       );
       return jsonb_build_object('invoice_id', p_invoice_id, 'status', p_status,
                                 'repeat', false, 'orphan', true);
@@ -456,3 +463,113 @@ $$;
 
 revoke all on function mark_refund_failed(text) from public, anon, authenticated;
 grant execute on function mark_refund_failed(text) to service_role;
+
+-- ---------------------------------------------------------------- STEP 9
+-- Passes go through the same gate as clubs. The crucial difference: the
+-- pass itself is not created until the money is in. Creating it earlier
+-- would hand out free bookings to anyone who opened a payment page, and
+-- would also start its 30 days before the person had paid for them.
+create or replace function reserve_subscription(
+  p_subscription_id text,
+  p_user_id text,
+  p_first_name text,
+  p_username text
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_title text;
+  v_count int;
+  v_price int;
+  v_reg_id uuid;
+begin
+  select title, sessions_count, price_uah
+  into v_title, v_count, v_price
+  from subscriptions where id = p_subscription_id;
+  if not found then
+    raise exception 'subscription_not_found';
+  end if;
+
+  if exists (
+    select 1 from user_subscriptions
+    where telegram_user_id = p_user_id
+      and expires_at > now()
+      and (sessions_total is null or sessions_used < sessions_total)
+  ) then
+    raise exception 'already_has_pass';
+  end if;
+
+  -- A purchase already waiting on an invoice is not "already bought".
+  if exists (
+    select 1 from registrations
+    where type = 'subscription' and telegram_user_id = p_user_id
+      and payment_state = 'pending'
+  ) then
+    raise exception 'payment_pending';
+  end if;
+
+  insert into registrations (
+    type, subscription_id, telegram_user_id, telegram_first_name, telegram_username,
+    paid_with, price_paid_uah, payment_state
+  ) values (
+    'subscription', p_subscription_id, p_user_id, p_first_name, p_username,
+    'card', v_price, 'pending'
+  )
+  returning id into v_reg_id;
+
+  return jsonb_build_object(
+    'registration_id', v_reg_id,
+    'needs_payment', true,
+    'title', v_title,
+    'sessions_total', v_count,
+    'price_uah', v_price,
+    'amount_kop', v_price * 100
+  );
+end;
+$$;
+
+revoke all on function reserve_subscription(text, text, text, text) from public, anon, authenticated;
+grant execute on function reserve_subscription(text, text, text, text) to service_role;
+
+-- Creates the pass once its payment is confirmed. Separate and idempotent,
+-- because a webhook may arrive more than once.
+create or replace function activate_paid_subscription(p_registration_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sub_id text;
+  v_user text;
+  v_title text;
+  v_count int;
+  v_days int;
+begin
+  select r.subscription_id, r.telegram_user_id, s.title, s.sessions_count, s.days_valid
+  into v_sub_id, v_user, v_title, v_count, v_days
+  from registrations r
+  join subscriptions s on s.id = r.subscription_id
+  where r.id = p_registration_id and r.type = 'subscription';
+  if not found then
+    return;
+  end if;
+
+  -- Already activated by an earlier delivery of the same webhook.
+  if exists (
+    select 1 from user_subscriptions
+    where telegram_user_id = v_user and subscription_id = v_sub_id
+      and purchased_at > now() - interval '1 day'
+  ) then
+    return;
+  end if;
+
+  -- The 30 days start now, when it was paid for, not when it was reserved.
+  insert into user_subscriptions (telegram_user_id, subscription_id, title, sessions_total, expires_at)
+  values (v_user, v_sub_id, v_title, v_count, now() + make_interval(days => coalesce(v_days, 30)));
+end;
+$$;
+
+revoke all on function activate_paid_subscription(uuid) from public, anon, authenticated;

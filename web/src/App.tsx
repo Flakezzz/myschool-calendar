@@ -283,7 +283,10 @@ export function App() {
           heading: "санчізес",
           title: pending.clubTitle,
           subtitle: pending.subtitle,
-          calm: "не переживай, лінк на зустріч прийде за годину до уроку",
+          calm:
+            pending.kind === "pass"
+              ? "абон активний — наступні клаби безкоштовні"
+              : "не переживай, лінк на зустріч прийде за годину до уроку",
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -298,9 +301,13 @@ export function App() {
           heading: status === "expired" ? "час вийшов" : "оплата не пройшла",
           title: pending.clubTitle,
           subtitle:
-            status === "expired"
-              ? "місце звільнили, бо оплата не дійшла за 15 хвилин — спробуй ще раз"
-              : "гроші не списались, місце звільнили — спробуй ще раз",
+            pending.kind === "pass"
+              ? status === "expired"
+                ? "час на оплату вийшов — абон не оформили, спробуй ще раз"
+                : "гроші не списались — абон не оформили, спробуй ще раз"
+              : status === "expired"
+                ? "місце звільнили, бо оплата не дійшла за 15 хвилин — спробуй ще раз"
+                : "гроші не списались, місце звільнили — спробуй ще раз",
           failed: true,
         });
       }
@@ -379,6 +386,7 @@ export function App() {
         // goes into storage and is picked up when Monobank sends us back.
         openPaymentPage(result.pageUrl, {
           invoiceId: result.invoiceId,
+          kind: "club",
           clubTitle: club.title,
           subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
           priceUah: result.pricePaidUah,
@@ -448,8 +456,20 @@ export function App() {
 
     setBusySubId(sub.id);
     try {
-      await buySubscription(sub.id);
+      const result = await buySubscription(sub.id);
       setSubsOpen(false);
+
+      if (result.needsPayment && result.pageUrl && result.invoiceId) {
+        openPaymentPage(result.pageUrl, {
+          invoiceId: result.invoiceId,
+          kind: "pass",
+          clubTitle: sub.title,
+          subtitle: sub.sessions,
+          priceUah: sub.priceUah,
+        });
+        return;
+      }
+
       setSuccess({
         title: sub.title,
         subtitle: sub.sessions,

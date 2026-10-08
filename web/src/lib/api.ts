@@ -229,14 +229,25 @@ export async function cancelBooking(registrationId: string): Promise<CancelResul
   };
 }
 
-export type BuyResult = { title: string; sessionsTotal: number | null; expiresAt: string };
+export type BuyResult = {
+  title: string;
+  sessionsTotal: number | null;
+  priceUah: number;
+  /** A pass is only ever created after it is paid for. */
+  needsPayment: boolean;
+  invoiceId: string | null;
+  pageUrl: string | null;
+};
 
 export async function buySubscription(subscriptionId: string): Promise<BuyResult> {
   const data = await call("buy_subscription", { subscriptionId });
   return {
     title: data.result?.title ?? "",
     sessionsTotal: data.result?.sessions_total ?? null,
-    expiresAt: data.result?.expires_at ?? "",
+    priceUah: data.result?.price_uah ?? 0,
+    needsPayment: data.result?.needs_payment === true,
+    invoiceId: data.result?.invoiceId ?? null,
+    pageUrl: data.result?.pageUrl ?? null,
   };
 }
 

@@ -198,8 +198,9 @@ const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "";
 async function createInvoice(opts: {
   amountKop: number;
   reference: string;
-  clubId: string;
-  clubTitle: string;
+  /** Goes into the fiscal receipt as the product code. */
+  code: string;
+  title: string;
 }): Promise<{ invoiceId: string; pageUrl: string }> {
   const res = await fetch("https://api.monobank.ua/api/merchant/invoice/create", {
     method: "POST",
@@ -215,15 +216,15 @@ async function createInvoice(opts: {
       redirectUrl: WEBAPP_URL || undefined,
       merchantPaymInfo: {
         reference: opts.reference,
-        destination: `Клаб «${opts.clubTitle}»`,
+        destination: opts.title,
         // Required once fiscalisation is switched on, and harmless before.
         basketOrder: [
           {
-            name: opts.clubTitle,
+            name: opts.title,
             qty: 1,
             sum: opts.amountKop,
             total: opts.amountKop,
-            code: opts.clubId,
+            code: opts.code,
             unit: "шт.",
           },
         ],
@@ -297,8 +298,8 @@ Deno.serve(async (req) => {
           invoice = await createInvoice({
             amountKop: reserved.amount_kop,
             reference: reserved.registration_id,
-            clubId: body.clubId,
-            clubTitle: reserved.club_title,
+            code: body.clubId,
+            title: `Клаб «${reserved.club_title}»`,
           });
         } catch (err) {
           // No invoice means no way to pay, so the seat must not stay held.
@@ -333,14 +334,51 @@ Deno.serve(async (req) => {
         return json({ ok: true, result: data });
       }
 
-      case "buy_subscription":
+      case "buy_subscription": {
         if (!body.subscriptionId) return json({ error: "bad_payload" }, 400);
-        return await rpc("buy_subscription", {
+
+        const { data: reserved, error: reserveError } = await supabase.rpc("reserve_subscription", {
           p_subscription_id: body.subscriptionId,
           p_user_id: user.id,
           p_first_name: user.firstName,
           p_username: user.username,
         });
+        if (reserveError) {
+          const code = dbErrorCode(describe(reserveError));
+          if (code) return json({ error: code }, 409);
+          throw reserveError;
+        }
+
+        let invoice;
+        try {
+          invoice = await createInvoice({
+            amountKop: reserved.amount_kop,
+            reference: reserved.registration_id,
+            code: body.subscriptionId,
+            title: reserved.title,
+          });
+        } catch (err) {
+          // Nothing was sold, so the pending purchase must not linger and
+          // block the next attempt with "payment_pending".
+          await supabase.from("registrations").delete().eq("id", reserved.registration_id);
+          console.error("invoice create failed", describe(err));
+          return json({ error: "payment_unavailable" }, 502);
+        }
+
+        await supabase.rpc("record_payment", {
+          p_invoice_id: invoice.invoiceId,
+          p_registration_id: reserved.registration_id,
+          p_user_id: user.id,
+          p_club_id: null,
+          p_amount_kop: reserved.amount_kop,
+          p_reference: reserved.registration_id,
+        });
+
+        return json({
+          ok: true,
+          result: { ...reserved, invoiceId: invoice.invoiceId, pageUrl: invoice.pageUrl },
+        });
+      }
 
       case "cancel_booking": {
         if (!body.registrationId) return json({ error: "bad_payload" }, 400);

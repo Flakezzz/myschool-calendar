@@ -101,6 +101,8 @@ export function getTelegramInitData(): string {
 
 export type PendingPayment = {
   invoiceId: string;
+  /** A club booking and a pass purchase end with different news. */
+  kind: "club" | "pass";
   clubTitle: string;
   subtitle: string;
   priceUah: number;
