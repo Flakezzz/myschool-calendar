@@ -1190,11 +1190,23 @@ a {
   color: #3a2d05;
 }
 
+/* The sheet opens tall on purpose: the three answers plus the badge want
+   the room, and a short sheet made the badge look stranded at the top.
+   dvh first fails on older browsers, so vh stays as the fallback. */
+.faq-sheet {
+  min-height: 72vh;
+  min-height: 72dvh;
+  max-height: 92vh;
+  max-height: 92dvh;
+}
+
+/* Pulled up into the header's row — that row holds nothing but the close
+   button over on the right, so the space above the badge was dead. */
 .faq-mark {
   display: block;
   width: 170px;
   height: 170px;
-  margin: 10px auto 6px;
+  margin: -34px auto 14px;
 }
 
 .faq-mark-disc {
