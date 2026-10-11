@@ -20,6 +20,10 @@
   --selected-day: #ecb1d8;    /* the square around today's pick */
   --selected-day-ink: #000000;
   --selected-day-line: #000000;
+  --btn-line: #000000;      /* her buttons are outlined, not just filled */
+  --tier-1: #7fc9fd;
+  --tier-2: #f4c819;
+  --tier-3: #bf1e1e;
   --booked-bg: rgba(236, 177, 216, 0.35);
   --navy: #7fcaff;            /* prices and seats are her light blue */
   --navy-solid: #ecb1d8;
@@ -60,6 +64,12 @@
     --selected-day: #111111;
     --selected-day-ink: #ffffff;
     --selected-day-line: transparent;
+    --btn-line: transparent;
+    /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
+       left exactly as it was, where all three lines are the same green. */
+    --tier-1: #4fbf8a;
+    --tier-2: #4fbf8a;
+    --tier-3: #4fbf8a;
     --faq: #f2c14e;
     color-scheme: dark;
   }
@@ -90,6 +100,12 @@
     --selected-day: #111111;
     --selected-day-ink: #ffffff;
     --selected-day-line: transparent;
+    --btn-line: transparent;
+    /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
+       left exactly as it was, where all three lines are the same green. */
+    --tier-1: #4fbf8a;
+    --tier-2: #4fbf8a;
+    --tier-3: #4fbf8a;
     --faq: #f2c14e;
   color-scheme: dark;
 }
@@ -670,7 +686,7 @@ a {
   flex: 1;
   width: 100%;
   min-height: 58px;
-  border: 0;
+  border: 1.5px solid var(--btn-line);
   background: var(--accent);
   /* The light palette's buttons are pale, so white text would vanish. */
   color: var(--on-accent);
@@ -886,12 +902,17 @@ a {
 .sub-top strong {
   font-family: Unbounded, Manrope, system-ui, sans-serif;
   font-size: 17px;
+  min-width: 0;
 }
 
 .sub-top em {
   font-style: normal;
   font-weight: 800;
   color: var(--navy);
+  /* "1200 грн" is one line in the Figma; the long titles next to it were
+     squeezing it onto two. */
+  white-space: nowrap;
+  flex: none;
 }
 
 .sub-sessions {
@@ -899,6 +920,27 @@ a {
   font-size: 12px;
   font-weight: 700;
   color: var(--seat-color);
+}
+
+/* Each plan's sessions line has its own colour in the Figma. */
+.sub-sessions.is-tier-1 {
+  color: var(--tier-1);
+}
+
+.sub-sessions.is-tier-2 {
+  color: var(--tier-2);
+}
+
+.sub-sessions.is-tier-3 {
+  color: var(--tier-3);
+}
+
+/* The small line under a sheet title, as in "Абонементи / зі знижечками". */
+.sheet-subtitle {
+  margin: 2px 0 14px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--ink);
 }
 
 .sub-desc {

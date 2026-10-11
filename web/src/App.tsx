@@ -303,7 +303,7 @@ export function App() {
           calm:
             pending.kind === "pass"
               ? "абон активний — наступні клаби безкоштовні, сі ю лейтер, алігейтор"
-              : "оплата пройшла! за день до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
+              : "оплата пройшла! за годину до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -417,7 +417,7 @@ export function App() {
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
         calm:
-          "оплата пройшла! за день до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
+          "оплата пройшла! за годину до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null

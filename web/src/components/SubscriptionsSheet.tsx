@@ -4,6 +4,10 @@ import { passSessionsLeft, type MyPass } from "../lib/api";
 /** The client wants each tier to answer differently, cheapest first. */
 const BUY_LABELS = ["хочу", "беру", "дуже хочу"];
 
+/** And each tier's "N клабів на місяць" line carries its own colour in her
+ * Figma — blue, then yellow, then red as the plans get bigger. */
+const TIER_CLASS = ["is-tier-1", "is-tier-2", "is-tier-3"];
+
 type Props = {
   subscriptions: Subscription[];
   /** The pass the user already holds, if any — only one at a time. */
@@ -29,11 +33,12 @@ export function SubscriptionsSheet({
       <article className={`sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
         <header>
-          <h2>абонементи</h2>
+          <h2>Абонементи</h2>
           <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
             ✕
           </button>
         </header>
+        <p className="sheet-subtitle">зі знижечками</p>
         {activePass ? (
           <p className="sheet-note">
             <strong>
@@ -52,7 +57,7 @@ export function SubscriptionsSheet({
                 <strong>{sub.title}</strong>
                 <em>{sub.priceUah} грн</em>
               </div>
-              <p className="sub-sessions">{sub.sessions}</p>
+              <p className={`sub-sessions ${TIER_CLASS[i] ?? TIER_CLASS[0]}`}>{sub.sessions}</p>
               <p className="sub-desc">{sub.description}</p>
               <button
                 type="button"
