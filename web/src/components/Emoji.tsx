@@ -25,17 +25,20 @@ type Props = {
  * disagree about honouring it on <text>, and one that ignores it leaves the
  * glyph high — which is the bug this is here to avoid.
  */
-export function Emoji({ children, size = 20 }: Props) {
+export function Emoji({ children, size = 24 }: Props) {
   return (
     <svg
+      // The box is a little wider than the glyph on purpose: emoji ink
+      // reaches above the ascender and below the baseline, and the SVG
+      // viewport clips, so a tight box would shave the edges off.
       className="emoji"
-      viewBox="0 0 20 20"
+      viewBox="0 0 24 24"
       width={size}
       height={size}
       aria-hidden="true"
       focusable="false"
     >
-      <text x="10" y="10" dy="0.35em" textAnchor="middle" fontSize="15">
+      <text x="12" y="12" dy="0.35em" textAnchor="middle" fontSize="18">
         {children}
       </text>
     </svg>

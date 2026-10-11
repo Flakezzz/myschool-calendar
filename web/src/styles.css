@@ -239,26 +239,23 @@ a {
   box-shadow: 0 0 0 2px var(--card);
 }
 
+/* Sized to the emoji box it holds. The sun and the moon sit on top of each
+   other inside it and cross-fade. */
 .theme-icon-stack {
   position: relative;
-  width: 20px;
-  height: 20px;
-  display: inline-block;
+  width: 24px;
+  height: 24px;
+  display: block;
 }
 
-/* Emoji now, so the box has to size them rather than an SVG viewBox. An
-   emoji sits on the text baseline, which left it low in the button; a grid
-   box centres the glyph itself and ignores the baseline entirely. */
+/* No size of its own: inset alone stretches it to the stack, so the two can
+   never disagree about where the centre is. The glyph's size lives in the
+   SVG. */
 .theme-icon {
-  font-size: 18px;
-  line-height: 1;
   display: grid;
   place-items: center;
-
   position: absolute;
   inset: 0;
-  width: 20px;
-  height: 20px;
   opacity: 0;
   transform: scale(0.4) rotate(-60deg);
   transition: opacity 360ms ease, transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
