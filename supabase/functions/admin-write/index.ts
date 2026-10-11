@@ -536,7 +536,9 @@ Deno.serve(async (req) => {
       if (!body.clubId) return json({ error: "bad_payload" }, 400);
       const { data, error } = await supabase
         .from("registrations")
-        .select("id, created_at, telegram_user_id, telegram_first_name, telegram_username, paid_with, price_paid_uah")
+        // payment_state matters here: a seat held for an unpaid invoice used
+        // to appear in this list as a paying attendee, price and all.
+        .select("id, created_at, telegram_user_id, telegram_first_name, telegram_username, paid_with, price_paid_uah, payment_state")
         .eq("club_id", body.clubId)
         .eq("type", "club")
         .order("created_at");

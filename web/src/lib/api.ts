@@ -116,8 +116,10 @@ export type ClubRegistration = {
   telegramUserId: string;
   name: string;
   username: string;
-  paidWith: "cash" | "subscription";
+  paidWith: "cash" | "subscription" | "card";
   pricePaidUah: number | null;
+  /** "pending" = the seat is held for an invoice nobody has paid yet. */
+  paymentState: "pending" | "confirmed";
 };
 
 export async function fetchClubRegistrations(clubId: string): Promise<ClubRegistration[]> {
@@ -130,6 +132,7 @@ export async function fetchClubRegistrations(clubId: string): Promise<ClubRegist
     username: r.telegram_username ?? "",
     paidWith: r.paid_with,
     pricePaidUah: r.price_paid_uah,
+    paymentState: r.payment_state ?? "confirmed",
   }));
 }
 

@@ -19,7 +19,23 @@ export function ClubRegistrationsSheet({
   closing,
   onClose,
 }: Props) {
-  const paid = registrations.reduce((sum, r) => sum + (r.pricePaidUah ?? 0), 0);
+  // This used to add up every price and call the total "готівкою", which
+  // counted card payments as cash and counted unpaid 20-minute holds as
+  // money in the drawer. Each way of paying is now its own number.
+  const real = registrations.filter((r) => r.paymentState === "confirmed");
+  const waiting = registrations.filter((r) => r.paymentState === "pending");
+  const sumBy = (how: "cash" | "card") =>
+    real.filter((r) => r.paidWith === how).reduce((sum, r) => sum + (r.pricePaidUah ?? 0), 0);
+  const cash = sumBy("cash");
+  const card = sumBy("card");
+  const onPass = real.filter((r) => r.paidWith === "subscription").length;
+
+  const howPaid = (reg: (typeof registrations)[number]) => {
+    if (reg.paymentState === "pending") return "⏳ на оплаті";
+    if (reg.paidWith === "subscription") return "абонемент";
+    if (reg.paidWith === "card") return `${reg.pricePaidUah ?? 0} ₴ карткою`;
+    return `${reg.pricePaidUah ?? 0} ₴ готівкою`;
+  };
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -45,16 +61,29 @@ export function ClubRegistrationsSheet({
               <div>
                 <dt>Записалось</dt>
                 <dd>
-                  {registrations.length}/{club.seats}
+                  {real.length}/{club.seats}
                 </dd>
               </div>
               <div>
-                <dt>Сплачено готівкою</dt>
-                <dd>{paid} ₴</dd>
+                <dt>Карткою</dt>
+                <dd>{card} ₴</dd>
+              </div>
+              <div>
+                <dt>Готівкою</dt>
+                <dd>{cash} ₴</dd>
+              </div>
+              <div>
+                <dt>За абоном</dt>
+                <dd>{onPass}</dd>
               </div>
             </dl>
+            {waiting.length ? (
+              <p className="sheet-note">
+                ще {waiting.length} на оплаті — місце тримається до 20 хвилин, потім звільниться
+              </p>
+            ) : null}
             <ul className="admin-list">
-              {registrations.map((reg, index) => (
+              {[...real, ...waiting].map((reg, index) => (
                 <li key={reg.id} className="admin-row">
                   <div className="admin-row-info">
                     <strong>
@@ -62,7 +91,7 @@ export function ClubRegistrationsSheet({
                     </strong>
                     <span>
                       {reg.username ? `@${reg.username} · ` : ""}
-                      {reg.paidWith === "subscription" ? "абонемент" : `${reg.pricePaidUah ?? 0} ₴`}
+                      {howPaid(reg)}
                     </span>
                   </div>
                 </li>

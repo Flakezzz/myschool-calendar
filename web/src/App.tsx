@@ -24,6 +24,7 @@ import {
   fetchIsAdmin,
   fetchMine,
   nextPass,
+  reconcilePayments,
   paymentStatus,
   saveClub,
   type ClubRegistration,
@@ -188,6 +189,8 @@ export function App() {
   const [editingIsNew, setEditingIsNew] = useState(false);
   const [adminSaving, setAdminSaving] = useState(false);
   const [adminError, setAdminError] = useState<string | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileNote, setReconcileNote] = useState<string | null>(null);
   const adminPresence = usePresence(adminOpen);
   const [shownEditingClub, setShownEditingClub] = useState<Club | null>(null);
   useEffect(() => {
@@ -536,6 +539,30 @@ export function App() {
     }
   };
 
+  const onReconcile = async () => {
+    setReconciling(true);
+    setReconcileNote(null);
+    setAdminError(null);
+    try {
+      const { checked, changed } = await reconcilePayments();
+      const fixed = Object.keys(changed).length;
+      setReconcileNote(
+        fixed === 0
+          ? `перевірили ${checked} оплат — усе сходиться`
+          : `перевірили ${checked}, виправили ${fixed}: ${Object.entries(changed)
+              .map(([inv, move]) => `${inv} ${move}`)
+              .join(", ")}`,
+      );
+      // A reconciliation can free seats or confirm bookings, so what is on
+      // screen may no longer be true.
+      await Promise.all([reloadClubs(), reloadMine()]);
+    } catch (err) {
+      setAdminError(errorText(err));
+    } finally {
+      setReconciling(false);
+    }
+  };
+
   const onShowRegistrations = async (club: Club) => {
     setRegs([]);
     setRegsError(null);
@@ -679,6 +706,9 @@ export function App() {
           onEdit={onAdminEdit}
           onDelete={onAdminDelete}
           onShowRegistrations={onShowRegistrations}
+          onReconcile={onReconcile}
+          reconciling={reconciling}
+          reconcileNote={reconcileNote}
         />
       ) : null}
       {regsPresence.rendered && shownRegsClub ? (

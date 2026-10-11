@@ -10,6 +10,10 @@ type Props = {
   onEdit: (club: Club) => void;
   onDelete: (club: Club) => void;
   onShowRegistrations: (club: Club) => void;
+  /** Asks Monobank whether our payment records are still true. */
+  onReconcile: () => void;
+  reconciling: boolean;
+  reconcileNote: string | null;
 };
 
 export function AdminPanel({
@@ -21,6 +25,9 @@ export function AdminPanel({
   onEdit,
   onDelete,
   onShowRegistrations,
+  onReconcile,
+  reconciling,
+  reconcileNote,
 }: Props) {
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -37,6 +44,16 @@ export function AdminPanel({
           + Новий клаб
         </button>
 
+        <button
+          type="button"
+          className="pay-btn secondary admin-add-btn"
+          onClick={onReconcile}
+          disabled={reconciling}
+        >
+          <span>{reconciling ? "питаємо моно…" : "звірити оплати з моно"}</span>
+        </button>
+
+        {reconcileNote ? <p className="sheet-note">{reconcileNote}</p> : null}
         {error ? <p className="form-error">{error}</p> : null}
 
         <ul className="admin-list">
