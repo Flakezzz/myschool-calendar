@@ -1130,27 +1130,34 @@ a {
 
 .faq-mark {
   display: block;
-  width: 150px;
-  height: 150px;
-  margin: 6px auto 4px;
+  width: 170px;
+  height: 170px;
+  margin: 10px auto 6px;
 }
 
 .faq-mark-disc {
   fill: var(--faq);
+  stroke: #000000;
+  stroke-width: 1.5;
 }
 
+/* White with a black outline, exactly as in her file. */
 .faq-mark-q {
   font-family: Unbounded, Manrope, system-ui, sans-serif;
-  font-size: 46px;
-  font-weight: 700;
-  fill: var(--ink);
+  font-size: 44px;
+  font-weight: 600;
+  fill: #ffffff;
+  stroke: #000000;
+  stroke-width: 1.5;
+  paint-order: stroke fill;
 }
 
 .faq-mark-ring {
   font-family: Unbounded, Manrope, system-ui, sans-serif;
-  font-size: 17px;
+  /* Sized against the disc the way she has it: cap height is a little under
+     a third of the disc's radius. */
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.08em;
   fill: var(--ink);
 }
 

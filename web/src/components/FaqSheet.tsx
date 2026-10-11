@@ -21,6 +21,14 @@ const ITEMS = [
 
 const CONTACT = "myschool_eng";
 
+/* The ring around the badge. Each letter is placed on its own rather than
+   run along a path: a path spaces them by glyph width, which bunched "шп"
+   together, while she has them evenly spread. The space is a slot that
+   stays empty, which is the gap she leaves between "маєш" and "питання".
+   RING_START turns the whole ring so "п" sits at about two o'clock. */
+const RING = "питання маєш";
+const RING_START = 55;
+
 export function FaqSheet({ closing, onClose }: Props) {
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -33,26 +41,33 @@ export function FaqSheet({ closing, onClose }: Props) {
           </button>
         </header>
 
-        {/* Her badge: a yellow disc with the question mark, and the words
-            running around it. The ring is one circular path — 25% along it
-            is the top, so the phrase sits centred over the disc. */}
+        {/* Her badge, measured off the Figma export: the disc is outlined
+            black and the question mark is white with a black outline, while
+            "питання маєш" runs the whole way round — not along an arc. The
+            ring radius is 1.5x the disc, as it is in her file. Giving the
+            text a textLength of the full circumference spreads the letters
+            evenly over 360°, and the offset puts "п" at about two o'clock,
+            where she starts it. */}
         <svg className="faq-mark" viewBox="0 0 160 160" role="img" aria-label="питання маєш?">
-          <defs>
-            <path
-              id="faq-ring-path"
-              fill="none"
-              d="M80,80 m-62,0 a62,62 0 1,1 124,0 a62,62 0 1,1 -124,0"
-            />
-          </defs>
-          <circle className="faq-mark-disc" cx="80" cy="80" r="42" />
-          <text className="faq-mark-q" x="80" y="80" textAnchor="middle" dominantBaseline="central">
+          <circle className="faq-mark-disc" cx="80" cy="80" r="40" />
+          <text className="faq-mark-q" x="80" y="81" textAnchor="middle" dominantBaseline="central">
             ?
           </text>
-          <text className="faq-mark-ring">
-            <textPath href="#faq-ring-path" startOffset="25%" textAnchor="middle">
-              питання маєш?
-            </textPath>
-          </text>
+          {RING.split("").map((ch, i) =>
+            ch === " " ? null : (
+              <text
+                key={i}
+                className="faq-mark-ring"
+                x="80"
+                y="20"
+                textAnchor="middle"
+                dominantBaseline="central"
+                transform={`rotate(${RING_START + i * (360 / RING.length)} 80 80)`}
+              >
+                {ch}
+              </text>
+            ),
+          )}
         </svg>
 
         <ul className="faq-list">
