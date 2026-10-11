@@ -7,10 +7,10 @@ type Props = {
   passes: MyPass[];
   loading: boolean;
   error: string | null;
-  cancellingId: string | null;
   closing: boolean;
   onClose: () => void;
-  onCancel: (booking: MyBooking) => void;
+  /** Tapping a row opens that club's card, where "не піду" lives now. */
+  onOpenClub: (booking: MyBooking) => void;
   onOpenFaq: () => void;
 };
 
@@ -19,19 +19,16 @@ export function MyBookingsSheet({
   passes,
   loading,
   error,
-  cancellingId,
   closing,
   onClose,
-  onCancel,
+  onOpenClub,
   onOpenFaq,
 }: Props) {
-  const withClub = bookings.filter((b) => b.club);
-  const upcoming = withClub
-    .filter((b) => !hasStarted(b.club!.date, b.club!.startTime))
+  // Only what is still ahead: the client asked for the "вже минули" list to
+  // go, so a finished club simply drops off this screen.
+  const upcoming = bookings
+    .filter((b) => b.club && !hasStarted(b.club.date, b.club.startTime))
     .sort((a, b) => (a.club!.date + a.club!.startTime).localeCompare(b.club!.date + b.club!.startTime));
-  const past = withClub
-    .filter((b) => hasStarted(b.club!.date, b.club!.startTime))
-    .sort((a, b) => (b.club!.date + b.club!.startTime).localeCompare(a.club!.date + a.club!.startTime));
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -85,28 +82,26 @@ export function MyBookingsSheet({
               {upcoming.length ? (
                 <ul className="mine-list">
                   {upcoming.map((booking) => (
-                    <li key={booking.id} className="mine-row">
-                      <i className="stripe" style={{ background: booking.club!.color }} />
-                      <div className="mine-row-info">
-                        <strong>{booking.club!.title}</strong>
-                        <span>
-                          {formatShortDate(booking.club!.date)} · {booking.club!.startTime}–
-                          {booking.club!.endTime}
-                        </span>
-                        <span>
-                          {booking.club!.teacher} ·{" "}
-                          {booking.paidWith === "subscription"
-                            ? "абонемент"
-                            : `${booking.pricePaidUah ?? 0} грн`}
-                        </span>
-                      </div>
+                    <li key={booking.id}>
                       <button
                         type="button"
-                        className="mine-cancel-btn"
-                        disabled={cancellingId === booking.id}
-                        onClick={() => onCancel(booking)}
+                        className="mine-row"
+                        onClick={() => onOpenClub(booking)}
                       >
-                        {cancellingId === booking.id ? "…" : "не піду"}
+                        <i className="stripe" style={{ background: booking.club!.color }} />
+                        <div className="mine-row-info">
+                          <strong>{booking.club!.title}</strong>
+                          <span>
+                            {formatShortDate(booking.club!.date)} · {booking.club!.startTime}–
+                            {booking.club!.endTime}
+                          </span>
+                          <span>
+                            {booking.club!.teacher} ·{" "}
+                            {booking.paidWith === "subscription"
+                              ? "абонемент"
+                              : `${booking.pricePaidUah ?? 0} грн`}
+                          </span>
+                        </div>
                       </button>
                     </li>
                   ))}
@@ -116,25 +111,6 @@ export function MyBookingsSheet({
               )}
             </section>
 
-            {past.length ? (
-              <section className="mine-section">
-                <h3>вже минули</h3>
-                <ul className="mine-list">
-                  {past.map((booking) => (
-                    <li key={booking.id} className="mine-row is-past">
-                      <i className="stripe" style={{ background: booking.club!.color }} />
-                      <div className="mine-row-info">
-                        <strong>{booking.club!.title}</strong>
-                        <span>
-                          {formatShortDate(booking.club!.date)} · {booking.club!.startTime}–
-                          {booking.club!.endTime}
-                        </span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
           </>
         )}
       </article>

@@ -33,11 +33,15 @@ export function ClubSheet({
   onShare,
   minSubPrice,
 }: Props) {
-  // Dragging the handle upward opens the card to its full content, which is
-  // where the long description and the teacher's clip live. A plain tap
-  // toggles it too, so it works without a touch screen.
-  const [expanded, setExpanded] = useState(false);
-  const expandedRef = useRef(false);
+  // The card opens on its full content — the client asked for the whole
+  // description up front — and the handle folds it back down. Dragging or a
+  // plain tap both work, so it needs no touch screen.
+  const [expanded, setExpanded] = useState(true);
+  const expandedRef = useRef(true);
+  // The player is heavy enough to stutter the opening animation if it mounts
+  // with everything else. Its box is drawn immediately (aspect-ratio keeps
+  // the height), so letting it arrive a moment later changes no layout.
+  const [playerReady, setPlayerReady] = useState(false);
   const dragFrom = useRef<number | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
   const lastHeight = useRef(0);
@@ -83,6 +87,13 @@ const SKIRT = 140;
     window.addEventListener("resize", measureBoth);
     return () => window.removeEventListener("resize", measureBoth);
   }, []);
+
+  useEffect(() => {
+    setPlayerReady(false);
+    // Long enough for the 240ms slide-in to finish.
+    const timer = window.setTimeout(() => setPlayerReady(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [club.id]);
 
   // Growing by animating height re-lays-out everything inside on every frame.
   // Instead the height is applied in one write and the card is pushed back
@@ -219,7 +230,7 @@ const SKIRT = 140;
 
         {club.videoUrl ? (
           <div className="club-video">
-            <ClubVideo url={club.videoUrl} title={club.title} />
+            {playerReady ? <ClubVideo url={club.videoUrl} title={club.title} /> : null}
           </div>
         ) : null}
 
@@ -255,10 +266,14 @@ const SKIRT = 140;
               )}
             </button>
           )}
-          <button className="pay-btn secondary" type="button" onClick={onOpenSubscriptions}>
-            <span>абонемент</span>
-            <em>від {minSubPrice} грн</em>
-          </button>
+          {/* Nothing to sell to someone who already holds a pass — and the
+              server refuses that purchase anyway. */}
+          {pass ? null : (
+            <button className="pay-btn secondary" type="button" onClick={onOpenSubscriptions}>
+              <span>абонемент</span>
+              <em>від {minSubPrice} грн</em>
+            </button>
+          )}
         </div>
       </article>
     </div>

@@ -227,11 +227,6 @@ export function App() {
     setMonth(d.getMonth());
   };
 
-  const dayClubs = useMemo(
-    () => clubs.filter((c) => c.date === selected).sort((a, b) => a.startTime.localeCompare(b.startTime)),
-    [clubs, selected],
-  );
-
   const bookingByClubId = useMemo(() => {
     const map = new Map<string, MyBooking>();
     for (const booking of mine.bookings) {
@@ -239,6 +234,22 @@ export function App() {
     }
     return map;
   }, [mine.bookings]);
+
+  // On a busy day the clubs you are already going to are not the ones you
+  // are deciding about, so they sink to the bottom and the rest stay in
+  // time order above them.
+  const dayClubs = useMemo(
+    () =>
+      clubs
+        .filter((c) => c.date === selected)
+        .sort((a, b) => {
+          const aBooked = bookingByClubId.has(a.id) ? 1 : 0;
+          const bBooked = bookingByClubId.has(b.id) ? 1 : 0;
+          if (aBooked !== bBooked) return aBooked - bBooked;
+          return a.startTime.localeCompare(b.startTime);
+        }),
+    [clubs, selected, bookingByClubId],
+  );
 
   // Days the person already holds a booking on — the calendar outlines them.
   const bookedDates = useMemo(() => {
@@ -291,8 +302,8 @@ export function App() {
           subtitle: pending.subtitle,
           calm:
             pending.kind === "pass"
-              ? "абон активний — наступні клаби безкоштовні"
-              : "не переживай, лінк на зустріч прийде за годину до уроку",
+              ? "абон активний — наступні клаби безкоштовні, сі ю лейтер, алігейтор"
+              : "лінк на зустріч прийде за годину до уроку, сі ю лейтер, алігейтор",
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -405,7 +416,7 @@ export function App() {
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-        calm: "не переживай, лінк на зустріч прийде за годину до уроку",
+        calm: "лінк на зустріч прийде за годину до уроку, сі ю лейтер, алігейтор",
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
@@ -490,6 +501,17 @@ export function App() {
       setBusySubId(null);
       await reloadMine();
     }
+  };
+
+  /** "Мої клаби" lists a trimmed copy of the club, so the real one is
+   * looked up by id — that is what carries the description, the video and
+   * the "не піду" button. */
+  const onOpenBookedClub = (booking: MyBooking) => {
+    const club = booking.club ? clubs.find((c) => c.id === booking.club!.id) : undefined;
+    if (!club) return;
+    setBookingsOpen(false);
+    setSelected(club.date);
+    setOpen(club);
   };
 
   const onOpenSubscriptions = () => {
@@ -688,11 +710,10 @@ export function App() {
           passes={mine.passes}
           loading={mineLoading}
           error={mineError}
-          cancellingId={cancellingId}
           closing={bookingsPresence.closing}
           onOpenFaq={() => setFaqOpen(true)}
           onClose={() => setBookingsOpen(false)}
-          onCancel={(booking) => onCancelBooking(booking.id, booking.club?.title ?? "")}
+          onOpenClub={onOpenBookedClub}
         />
       ) : null}
       {faqPresence.rendered ? (

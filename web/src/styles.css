@@ -109,7 +109,7 @@ a {
 }
 
 .top h1 {
-  font-family: Fraunces, Georgia, serif;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
   font-size: 28px;
   margin: 4px 0 14px;
 }
@@ -514,7 +514,7 @@ a {
 }
 
 .sheet h2 {
-  font-family: Fraunces, Georgia, serif;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
   margin: 0;
 }
 
@@ -740,7 +740,13 @@ a {
   gap: 10px;
 }
 
+/* The whole row is a button now — tapping it opens that club's card, where
+   cancelling lives. */
 .mine-row {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
   display: flex;
   align-items: stretch;
   gap: 0;
@@ -775,29 +781,6 @@ a {
 .mine-row-info span {
   font-size: 12px;
   color: var(--muted);
-}
-
-.mine-row.is-past {
-  opacity: 0.55;
-}
-
-.mine-cancel-btn {
-  flex: none;
-  align-self: center;
-  margin-right: 10px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--accent);
-  border-radius: 10px;
-  padding: 8px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.mine-cancel-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .pass-card {
@@ -859,7 +842,7 @@ a {
 }
 
 .sub-top strong {
-  font-family: Fraunces, Georgia, serif;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
   font-size: 17px;
 }
 
