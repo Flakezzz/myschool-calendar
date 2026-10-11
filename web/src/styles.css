@@ -213,6 +213,10 @@ a {
   border-radius: 999px;
   width: 40px;
   height: 40px;
+  /* A button carries the browser's own padding unless told otherwise, and
+     here it was squeezing the 32px icon box down to 26px — which pushed the
+     glyph off centre sideways and let it hang over the right edge. */
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,27 +228,32 @@ a {
 /* Positions .badge-dot inside the "Мої записи" button. */
 .theme-btn {
   position: relative;
+  /* The badge sits on the rim, so it must not be cut off by the circle. The
+     icons only ever scale down, so nothing else can escape. */
+  overflow: visible;
 }
 
+/* Centred on the rim at the top right — on a 40px circle that is 14.1px out
+   along each axis, which puts a 10px dot's corner at 1px. Ringed in the page
+   background so it reads as its own thing against both the button's outline
+   and the emoji behind it. */
 .badge-dot {
   position: absolute;
-  top: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
+  top: 1px;
+  right: 1px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
   background: var(--accent);
-  /* A ring of the button's own background keeps the dot a separate thing
-     even when the emoji underneath reaches into the corner. */
-  box-shadow: 0 0 0 2px var(--card);
+  box-shadow: 0 0 0 2px var(--bg);
 }
 
 /* Sized to the emoji box it holds. The sun and the moon sit on top of each
    other inside it and cross-fade. */
 .theme-icon-stack {
   position: relative;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   display: block;
 }
 

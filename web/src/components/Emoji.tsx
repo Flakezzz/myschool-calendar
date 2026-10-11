@@ -24,21 +24,30 @@ type Props = {
  * `dominant-baseline="central"` would say this more directly, but engines
  * disagree about honouring it on <text>, and one that ignores it leaves the
  * glyph high — which is the bug this is here to avoid.
+ *
+ * One more thing the size has to account for: iOS inflates HTML text on its
+ * own (text-size-adjust) but leaves SVG text alone, so the same number came
+ * out visibly smaller on the phone than it had as plain text. Hence 25 in a
+ * 40px button rather than the 18 it used to be.
  */
-export function Emoji({ children, size = 24 }: Props) {
+/** Glyph size in user units, and the box around it. The box is deliberately
+ * roomier than the glyph: emoji ink reaches above the ascender and below
+ * the baseline, and an SVG viewport clips, so a tight box shaves the edges
+ * off. Keep the ratio if the size changes. */
+const GLYPH = 25;
+const BOX = 32;
+
+export function Emoji({ children, size = BOX }: Props) {
   return (
     <svg
-      // The box is a little wider than the glyph on purpose: emoji ink
-      // reaches above the ascender and below the baseline, and the SVG
-      // viewport clips, so a tight box would shave the edges off.
       className="emoji"
-      viewBox="0 0 24 24"
+      viewBox={`0 0 ${BOX} ${BOX}`}
       width={size}
       height={size}
       aria-hidden="true"
       focusable="false"
     >
-      <text x="12" y="12" dy="0.35em" textAnchor="middle" fontSize="18">
+      <text x={BOX / 2} y={BOX / 2} dy="0.35em" textAnchor="middle" fontSize={GLYPH}>
         {children}
       </text>
     </svg>
