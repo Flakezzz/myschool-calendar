@@ -11,7 +11,20 @@ type Props = {
   onSave: (club: Club) => void;
 };
 
-const COLORS = ["#E85D4C", "#3BA99C", "#E8B86D", "#1B4D6E", "#8E5FD1"];
+/* The client assigned a colour to each of her clubs in the Figma and wrote
+   them out by name; these are those exact values, sampled from her export.
+   Order follows her list. */
+const COLORS = [
+  "#E78516", // memes club
+  "#ECB2D8", // movie club
+  "#39913C", // reading club
+  "#692BDC", // taro club
+  "#1870E3", // business club
+  "#7FC9FD", // гей(м) клаб
+  "#F4C819", // прадльонка club
+  "#BF1E1E", // спід дейтінг
+  "#000000", // save the drama for your mama club
+];
 
 export function ClubForm({ initial, isNew, closing, saving, error, onClose, onSave }: Props) {
   const [club, setClub] = useState<Club>(initial);

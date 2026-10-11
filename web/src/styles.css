@@ -1,26 +1,33 @@
 :root {
-  /* Light theme follows the client's Figma: white paper, flat brand colours,
-     near-black text. Dark theme below is deliberately untouched. */
+  /* Light theme is taken from the client's Figma, colour by colour: these
+     values were sampled out of her exported layers, not matched by eye.
+     White paper, flat fills, hairline black outlines and no shadows at all —
+     the depth in her design comes from the outline, not from a blur.
+     Dark theme below is deliberately untouched. */
   --bg: #ffffff;
   --card: #ffffff;
-  --ink: #111111;
+  --ink: #000000;
   --muted: #8a8a8a;
-  --line: #e6e6e6;
-  --accent: #f0a8ce;          /* рожевий — го, записатись, найс */
-  --on-accent: #111111;       /* her buttons carry dark text, not white */
-  --yellow: #f5d547;          /* абонемент, знак питання */
-  --green: #46a758;           /* галочка оплати, жартую так */
-  --danger: #e8646e;          /* куди нада */
-  --secondary-btn: #f5d547;   /* абонемент is the yellow one in her design */
-  --secondary-btn-ink: #3a2d05;
-  --booked-bg: rgba(17, 17, 17, 0.08);
-  --navy: #111111;
-  --navy-solid: #111111;
-  --navy-dim: #c9c9c9;
+  --line: #000000;            /* every card in her design is outlined black */
+  --accent: #ecb2d8;          /* рожевий — го, записатись, найс */
+  --on-accent: #000000;       /* her buttons carry black text, not white */
+  --yellow: #f4c819;          /* абонемент */
+  --faq: #e8b51c;             /* знак питання — a shade deeper than the button */
+  --green: #6aae6e;           /* жартую так */
+  --danger: #f8685f;          /* куди нада */
+  --secondary-btn: #f4c819;   /* абонемент is the yellow one in her design */
+  --secondary-btn-ink: #000000;
+  --selected-day: #ecb1d8;    /* the square around today's pick */
+  --selected-day-ink: #000000;
+  --selected-day-line: #000000;
+  --booked-bg: rgba(236, 177, 216, 0.35);
+  --navy: #7fcaff;            /* prices and seats are her light blue */
+  --navy-solid: #ecb1d8;
+  --navy-dim: #000000;
   --btn-bg: #f3f3f3;
   --sub-card-bg: #ffffff;
-  --seat-color: #46a758;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --seat-color: #7fcaff;
+  --shadow: none;
   color-scheme: light;
   color: var(--ink);
   font-family: Manrope, system-ui, sans-serif;
@@ -48,6 +55,12 @@
     --secondary-btn: #6f93ab;
     --secondary-btn-ink: #ffffff;
     --booked-bg: rgba(111, 147, 171, 0.3);
+    /* Carried over so the light theme's new tokens never leak in here. */
+    --navy-solid: #111111;
+    --selected-day: #111111;
+    --selected-day-ink: #ffffff;
+    --selected-day-line: transparent;
+    --faq: #f2c14e;
     color-scheme: dark;
   }
 }
@@ -72,6 +85,12 @@
   --secondary-btn: #6f93ab;
   --secondary-btn-ink: #ffffff;
   --booked-bg: rgba(111, 147, 171, 0.3);
+    /* Carried over so the light theme's new tokens never leak in here. */
+    --navy-solid: #111111;
+    --selected-day: #111111;
+    --selected-day-ink: #ffffff;
+    --selected-day-line: transparent;
+    --faq: #f2c14e;
   color-scheme: dark;
 }
 
@@ -273,9 +292,13 @@ a {
   cursor: default;
 }
 
+/* In the Figma the chosen day is a pink square with a hairline black
+   outline — not a filled black block. The outline is drawn with an inset
+   shadow so it costs no layout and the grid cells stay exactly aligned. */
 .cell.selected {
-  background: var(--navy-solid);
-  color: #fff;
+  background: var(--selected-day);
+  color: var(--selected-day-ink);
+  box-shadow: inset 0 0 0 1.5px var(--selected-day-line);
 }
 
 .cell.today:not(.selected) .num {
@@ -1029,7 +1052,7 @@ a {
 
 /* FAQ sheet — the "?" button in "Мої клаби" opens it. */
 .faq-btn {
-  background: var(--yellow);
+  background: var(--faq);
   color: #3a2d05;
 }
 
