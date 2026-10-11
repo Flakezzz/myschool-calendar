@@ -1,4 +1,8 @@
-const BG_BY_THEME = { light: "#f4efe6", dark: "#14181f" } as const;
+/* The colour Telegram paints its own bar above the app ("MySchool / mini
+   app") and the area behind it. It has to be the page's own background or
+   the app looks like it starts halfway down the screen — light is white
+   since the Figma restyle, not the old cream. */
+const BG_BY_THEME = { light: "#ffffff", dark: "#14181f" } as const;
 
 export function initTelegram() {
   const tg = window.Telegram?.WebApp;

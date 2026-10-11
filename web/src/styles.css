@@ -183,8 +183,12 @@ a {
 }
 
 .btn-emoji {
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
 }
 
 .admin-btn {
@@ -242,11 +246,14 @@ a {
   display: inline-block;
 }
 
-/* Emoji now, so the box has to size them rather than an SVG viewBox. */
+/* Emoji now, so the box has to size them rather than an SVG viewBox. An
+   emoji sits on the text baseline, which left it low in the button; a grid
+   box centres the glyph itself and ignores the baseline entirely. */
 .theme-icon {
-  font-size: 19px;
-  line-height: 20px;
-  text-align: center;
+  font-size: 18px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
   position: absolute;
   inset: 0;
   width: 20px;
@@ -1297,11 +1304,17 @@ a {
 }
 
 /* The "your link is coming" line, between the date and the pass counter. */
+/* The client writes this as two lines — "оплата пройшла!" on its own, then
+   the rest — so the newline in the string is honoured and both lines sit
+   centred. The long second line still wraps, centred, on a narrow phone. */
 .success-calm {
-  margin: 10px 0 0;
+  margin: 10px auto 0;
+  max-width: 300px;
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink);
+  white-space: pre-line;
+  text-align: center;
 }
 
 /* Small explanation under a form field. */
