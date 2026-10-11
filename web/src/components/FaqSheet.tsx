@@ -33,6 +33,28 @@ export function FaqSheet({ closing, onClose }: Props) {
           </button>
         </header>
 
+        {/* Her badge: a yellow disc with the question mark, and the words
+            running around it. The ring is one circular path — 25% along it
+            is the top, so the phrase sits centred over the disc. */}
+        <svg className="faq-mark" viewBox="0 0 160 160" role="img" aria-label="питання маєш?">
+          <defs>
+            <path
+              id="faq-ring-path"
+              fill="none"
+              d="M80,80 m-62,0 a62,62 0 1,1 124,0 a62,62 0 1,1 -124,0"
+            />
+          </defs>
+          <circle className="faq-mark-disc" cx="80" cy="80" r="42" />
+          <text className="faq-mark-q" x="80" y="80" textAnchor="middle" dominantBaseline="central">
+            ?
+          </text>
+          <text className="faq-mark-ring">
+            <textPath href="#faq-ring-path" startOffset="25%" textAnchor="middle">
+              питання маєш?
+            </textPath>
+          </text>
+        </svg>
+
         <ul className="faq-list">
           {ITEMS.map((item) => (
             <li key={item.q}>

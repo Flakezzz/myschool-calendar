@@ -59,7 +59,7 @@ export function MyBookingsSheet({
           <>
             {passes.length ? (
               <section className="mine-section">
-                <h3>абонементи</h3>
+                <h3>Абонементи</h3>
                 <ul className="mine-list">
                   {passes.map((pass) => {
                     const left = passSessionsLeft(pass);
@@ -67,7 +67,9 @@ export function MyBookingsSheet({
                       <li key={pass.id} className="pass-card">
                         <div className="pass-top">
                           <strong>{pass.title}</strong>
-                          <em>{left === null ? "безліміт" : `${left} з ${pass.sessionsTotal}`}</em>
+                          <em>
+                            {left === null ? "безліміт" : `${left} з ${pass.sessionsTotal}`}
+                          </em>
                         </div>
                         <p className="pass-meta">діє до {formatTimestampDate(pass.expiresAt)}</p>
                       </li>
@@ -78,7 +80,7 @@ export function MyBookingsSheet({
             ) : null}
 
             <section className="mine-section">
-              <h3>найближчі клаби</h3>
+              <h3>Найближчі клаби</h3>
               {upcoming.length ? (
                 <ul className="mine-list">
                   {upcoming.map((booking) => (

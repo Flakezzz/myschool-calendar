@@ -22,6 +22,10 @@
   --selected-day-line: #000000;
   --btn-line: #000000;      /* her buttons are outlined, not just filled */
   --eyebrow: #000000;
+  --pass-bg: rgba(236, 178, 216, 0.35);
+  --pass-line: #000000;
+  --pass-counter: transparent;
+  --pass-counter-line: #000000;
   --tier-1: #7fc9fd;
   --tier-2: #f4c819;
   --tier-3: #bf1e1e;
@@ -67,6 +71,10 @@
     --selected-day-line: transparent;
     --btn-line: transparent;
     --eyebrow: #8fb8d9;
+    --pass-bg: #232a33;
+    --pass-line: #2b323c;
+    --pass-counter: #4fbf8a;
+    --pass-counter-line: transparent;
     /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
        left exactly as it was, where all three lines are the same green. */
     --tier-1: #4fbf8a;
@@ -104,6 +112,10 @@
     --selected-day-line: transparent;
     --btn-line: transparent;
     --eyebrow: #8fb8d9;
+    --pass-bg: #232a33;
+    --pass-line: #2b323c;
+    --pass-counter: #4fbf8a;
+    --pass-counter-line: transparent;
     /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
        left exactly as it was, where all three lines are the same green. */
     --tier-1: #4fbf8a;
@@ -771,32 +783,15 @@ a {
 
 /* Dot + label + hairline, so a section heading reads as a divider rather
    than as another line of content. */
+/* Plain headings in her design — no eyebrow caps, no rule running off to
+   the side; just the words in the display face. */
 .mine-section h3 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   margin: 0 0 12px;
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--navy);
-}
-
-.mine-section h3::before {
-  content: "";
-  flex: none;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--accent);
-}
-
-.mine-section h3::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--line);
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
 }
 
 .mine-list {
@@ -851,10 +846,10 @@ a {
 }
 
 .pass-card {
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  padding: 12px 14px;
-  background: var(--sub-card-bg);
+  border: 1.5px solid var(--pass-line);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: var(--pass-bg);
   min-width: 0;
 }
 
@@ -867,17 +862,24 @@ a {
 }
 
 .pass-top strong {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-size: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* "3 з 4" is drawn as hollow figures in the Figma — outline only, no fill.
+   The stroke property is prefixed everywhere that supports it; browsers
+   that do not simply show solid text, which still reads correctly. */
 .pass-top em {
   flex: none;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
   font-style: normal;
-  font-weight: 800;
-  font-size: 13px;
-  color: var(--seat-color);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--pass-counter);
+  -webkit-text-stroke: 1.2px var(--pass-counter-line);
 }
 
 .pass-meta {
@@ -1124,6 +1126,32 @@ a {
 .faq-btn {
   background: var(--faq);
   color: #3a2d05;
+}
+
+.faq-mark {
+  display: block;
+  width: 150px;
+  height: 150px;
+  margin: 6px auto 4px;
+}
+
+.faq-mark-disc {
+  fill: var(--faq);
+}
+
+.faq-mark-q {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-size: 46px;
+  font-weight: 700;
+  fill: var(--ink);
+}
+
+.faq-mark-ring {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  fill: var(--ink);
 }
 
 .faq-list {
