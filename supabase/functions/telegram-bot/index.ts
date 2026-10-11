@@ -25,10 +25,29 @@ const BOT_TOKEN = Deno.env.get("BOT_TOKEN") ?? "";
 const WEBHOOK_SECRET = Deno.env.get("TELEGRAM_WEBHOOK_SECRET") ?? "";
 const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "https://flakezzz.github.io/myschool-calendar/";
 
-const WELCOME =
-  "Вітаємо у MySchool! 👋\n\n" +
-  "Тут календар наших клабів: обирайте дату, дивіться деталі та записуйтесь. " +
-  "Натисніть кнопку нижче, щоб відкрити.";
+// The client's own words, exactly as she sent them — spelling, spacing and
+// the emoji that sit flush against their club names. Do not tidy them up.
+const WELCOME = [
+  "приииивіт, це календар клабів майскул",
+  "",
+  "тут ти можеш практикувати свій спікінг з іншими інгліш лернерамі",
+  "",
+  "у нас є такі клаби:",
+  "",
+  "🪔 mindfulness club",
+  "👶🏻 прадльонка (граматика)",
+  "🎲гей(м) клаб",
+  "🤣 меми",
+  "🎥 муві",
+  "♥️ save the drama for your mama",
+  "📚рідінг",
+  "🔞 спід дейтінг ноу секс клаб",
+  "🧳business клаб",
+  "",
+  "на початку у нас будуть функціонувати 4 клаби, згодом підключимо всі",
+  "",
+  "заходь в календар, обирай свій клуб і летс рокнролл 💃🏽🕺",
+].join("\n");
 
 async function telegram(method: string, body: unknown): Promise<void> {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
@@ -63,7 +82,7 @@ Deno.serve(async (req) => {
       chat_id: message.chat.id,
       text: WELCOME,
       reply_markup: {
-        inline_keyboard: [[{ text: "📅 Відкрити календар", web_app: { url: WEBAPP_URL } }]],
+        inline_keyboard: [[{ text: "обрати клаб", web_app: { url: WEBAPP_URL } }]],
       },
     });
   }
