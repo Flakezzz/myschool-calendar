@@ -21,6 +21,7 @@
   --selected-day-ink: #000000;
   --selected-day-line: #000000;
   --btn-line: #000000;      /* her buttons are outlined, not just filled */
+  --eyebrow: #000000;
   --tier-1: #7fc9fd;
   --tier-2: #f4c819;
   --tier-3: #bf1e1e;
@@ -65,6 +66,7 @@
     --selected-day-ink: #ffffff;
     --selected-day-line: transparent;
     --btn-line: transparent;
+    --eyebrow: #8fb8d9;
     /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
        left exactly as it was, where all three lines are the same green. */
     --tier-1: #4fbf8a;
@@ -101,6 +103,7 @@
     --selected-day-ink: #ffffff;
     --selected-day-line: transparent;
     --btn-line: transparent;
+    --eyebrow: #8fb8d9;
     /* Per-tier colours are a light-theme idea from the Figma. Dark was to be
        left exactly as it was, where all three lines are the same green. */
     --tier-1: #4fbf8a;
@@ -145,8 +148,10 @@ a {
 
 .top h1 {
   font-family: Unbounded, Manrope, system-ui, sans-serif;
-  font-size: 28px;
-  margin: 4px 0 14px;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
 }
 
 .top-row {
@@ -167,13 +172,17 @@ a {
   color: var(--ink);
 }
 
+/* In the Figma this is "my school" — lowercase, in the same display face
+   as the title under it, and the same ink as the text rather than an
+   accent colour. Dark keeps the accent, where plain ink would disappear
+   into the heading. */
 .eyebrow {
   margin: 0;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 11px;
-  color: var(--navy);
-  font-weight: 800;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  letter-spacing: -0.01em;
+  font-size: 15px;
+  color: var(--eyebrow);
+  font-weight: 500;
 }
 
 .theme-btn {

@@ -620,7 +620,7 @@ export function App() {
     <main className="app">
       <header className="top">
         <div className="top-row">
-          <p className="eyebrow">MySchool</p>
+          <p className="eyebrow">my school</p>
           <div className="top-row-actions">
             {isAdmin ? (
               <button
@@ -646,7 +646,7 @@ export function App() {
             <ThemeToggle />
           </div>
         </div>
-        <h1>Clubs</h1>
+        <h1>CLUBS</h1>
         {/* The arrows are pointing hands in the client's Figma — one aimed
             at the month from each side. They are the buttons themselves,
             not decoration, so the label stays for screen readers. */}
