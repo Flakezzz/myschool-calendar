@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Emoji } from "./Emoji";
 import { applyTheme, getEffectiveTheme, type ThemeMode } from "../lib/theme";
 import { syncTelegramTheme } from "../lib/telegram";
 
@@ -17,10 +18,10 @@ export function ThemeToggle() {
       {/* The sun and the moon are emoji in her Figma, not drawn icons. */}
       <span className="theme-icon-stack" aria-hidden="true">
         <span className={`theme-icon${mode === "light" ? " is-active" : ""}`}>
-          <span className="emoji-ink">🌞</span>
+          <Emoji>🌞</Emoji>
         </span>
         <span className={`theme-icon${mode === "dark" ? " is-active" : ""}`}>
-          <span className="emoji-ink">🌝</span>
+          <Emoji>🌝</Emoji>
         </span>
       </span>
     </button>

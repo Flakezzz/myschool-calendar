@@ -7,6 +7,7 @@ import { ClubForm } from "./components/ClubForm";
 import { ClubList } from "./components/ClubList";
 import { ClubRegistrationsSheet } from "./components/ClubRegistrationsSheet";
 import { ClubSheet } from "./components/ClubSheet";
+import { Emoji } from "./components/Emoji";
 import { FaqSheet } from "./components/FaqSheet";
 import { MyBookingsSheet } from "./components/MyBookingsSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
@@ -628,7 +629,7 @@ export function App() {
                 onClick={() => setAdminOpen(true)}
                 aria-label="Адмін-панель"
               >
-                ⚙
+                <Emoji>⚙️</Emoji>
               </button>
             ) : null}
             {inTelegram ? (
@@ -638,9 +639,7 @@ export function App() {
                 onClick={() => setBookingsOpen(true)}
                 aria-label="Мої клаби"
               >
-                <span className="btn-emoji" aria-hidden="true">
-                  <span className="emoji-ink">🎟</span>
-                </span>
+                <Emoji>🎟</Emoji>
                 {mine.bookings.length ? <i className="badge-dot" /> : null}
               </button>
             ) : null}
