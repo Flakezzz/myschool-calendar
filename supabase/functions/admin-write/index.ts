@@ -571,7 +571,7 @@ Deno.serve(async (req) => {
       let checked = 0;
       for (const row of list ?? []) {
         checked++;
-        let mono: { status?: string } | null = null;
+        let mono: { status?: string; amount?: number } | null = null;
         try {
           const res = await fetch(
             `https://api.monobank.ua/api/merchant/invoice/status?invoiceId=${row.invoice_id}`,
@@ -582,7 +582,23 @@ Deno.serve(async (req) => {
           console.error("reconcile status failed", row.invoice_id, describe(err));
         }
         const theirs = mono?.status;
-        if (!theirs || theirs === row.our_status) continue;
+        if (!theirs) continue;
+
+        // A refund we promised but never sent. Cancelling claims the refund
+        // on the row before calling Monobank, so if that call never
+        // happened the row says "refunded" while the money is still ours.
+        // Monobank still saying success is the proof, and the only way to
+        // find it: the money-check skips refunded rows by design.
+        if (row.refund_claimed && (theirs === "success" || theirs === "hold")) {
+          if (await tryRefund(row.invoice_id, mono?.amount ?? null)) {
+            changed[row.invoice_id] = "promised refund actually sent";
+          } else {
+            changed[row.invoice_id] = "promised refund STILL failing — check by hand";
+          }
+          continue;
+        }
+
+        if (theirs === row.our_status) continue;
 
         if (theirs === "reversed") {
           // Money went back and we never heard about it.
@@ -592,11 +608,20 @@ Deno.serve(async (req) => {
           // Everything else goes through the same door as the webhook, so
           // the orphan and idempotency rules apply unchanged.
           try {
-            await supabase.rpc("apply_payment_status", {
+            const { data: applied } = await supabase.rpc("apply_payment_status", {
               p_invoice_id: row.invoice_id,
               p_status: theirs,
             });
             changed[row.invoice_id] = `${row.our_status} -> ${theirs}`;
+            // Money that arrived after we had given the seat away. The
+            // webhook path refunds these; reconciliation has to as well, or
+            // finding them would achieve nothing.
+            if (applied?.orphan) {
+              const ok = await tryRefund(row.invoice_id, mono?.amount ?? null);
+              changed[row.invoice_id] = ok
+                ? `${row.our_status} -> ${theirs}, money returned`
+                : `${row.our_status} -> ${theirs}, REFUND FAILED — check by hand`;
+            }
           } catch (err) {
             console.error("reconcile apply failed", row.invoice_id, describe(err));
           }
