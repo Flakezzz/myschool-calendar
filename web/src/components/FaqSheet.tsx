@@ -34,8 +34,9 @@ export function FaqSheet({ closing, onClose }: Props) {
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
       <article className={`sheet faq-sheet${closing ? " closing" : ""}`} onClick={(e) => e.stopPropagation()}>
         <div className="sheet-handle" />
-        <header>
-          <h2>маєш питання?</h2>
+        {/* No heading: the badge below already says "питання маєш?", and
+            saying it twice on one screen reads as a stutter. */}
+        <header className="is-bare">
           <button className="icon-btn" type="button" onClick={onClose} aria-label="Закрити">
             ✕
           </button>

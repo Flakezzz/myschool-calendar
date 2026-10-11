@@ -24,7 +24,7 @@
   --eyebrow: #000000;
   --pass-bg: rgba(236, 178, 216, 0.35);
   --pass-line: #000000;
-  --pass-counter: transparent;
+  --pass-counter: #ffffff;
   --pass-counter-line: #000000;
   --success: #2f7d56;      /* the green of her tick */
   --tier-1: #7fc9fd;
@@ -431,6 +431,9 @@ a {
 .day-block h2 {
   font-size: 16px;
   margin: 0 0 10px;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 @keyframes list-fade {
@@ -486,6 +489,15 @@ a {
   gap: 8px;
 }
 
+/* Club names are set in the display face in her Figma, same as the
+   headings above them. */
+.club-top strong {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  min-width: 0;
+}
+
 .club-top em {
   font-style: normal;
   font-weight: 800;
@@ -521,6 +533,8 @@ a {
 .empty-day p {
   margin: 0 0 4px;
   font-weight: 800;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 700;
 }
 
 .empty-day span {
@@ -619,6 +633,12 @@ a {
   align-items: start;
 }
 
+/* A header with nothing but the close button: it still has to hold the
+   corner, so the button goes to the right on its own. */
+.sheet header.is-bare {
+  justify-content: flex-end;
+}
+
 .sheet h2 {
   font-family: Unbounded, Manrope, system-ui, sans-serif;
   margin: 0;
@@ -677,6 +697,8 @@ a {
   font-weight: 800;
   font-size: 16px;
   line-height: 1.35;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 700;
 }
 
 /* Narrower than the sheet so long sentences wrap into a readable block
@@ -700,6 +722,9 @@ a {
    note is shown. */
 .success-sheet .pay-btn {
   margin-top: 26px;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .sheet-desc {
@@ -861,6 +886,11 @@ a {
 }
 
 .mine-row-info strong,
+.mine-row-info strong {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 600;
+}
+
 .mine-row-info span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -907,6 +937,9 @@ a {
   font-size: 15px;
   color: var(--pass-counter);
   -webkit-text-stroke: 1.2px var(--pass-counter-line);
+  /* Stroke behind the fill, or the outline eats half the white out of the
+     figures and they close up at this size. */
+  paint-order: stroke fill;
 }
 
 .pass-meta {
@@ -979,6 +1012,8 @@ a {
   font-weight: 700;
   font-size: 15px;
   color: var(--ink);
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 500;
 }
 
 .sub-desc {
@@ -1200,6 +1235,8 @@ a {
   margin: 0 0 4px;
   font-weight: 700;
   font-size: 16px;
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-weight: 600;
 }
 
 .faq-a {
