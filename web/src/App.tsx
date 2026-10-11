@@ -303,7 +303,7 @@ export function App() {
           calm:
             pending.kind === "pass"
               ? "абон активний — наступні клаби безкоштовні, сі ю лейтер, алігейтор"
-              : "лінк на зустріч прийде за годину до уроку, сі ю лейтер, алігейтор",
+              : "оплата пройшла! за день до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -416,7 +416,8 @@ export function App() {
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-        calm: "лінк на зустріч прийде за годину до уроку, сі ю лейтер, алігейтор",
+        calm:
+          "оплата пройшла! за день до зустрічі тобі прийде нагадування з лінком на зустріч, сі ю лейтер, алігейтор",
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
@@ -646,13 +647,26 @@ export function App() {
           </div>
         </div>
         <h1>Clubs</h1>
+        {/* The arrows are pointing hands in the client's Figma — one aimed
+            at the month from each side. They are the buttons themselves,
+            not decoration, so the label stays for screen readers. */}
         <div className="month-nav">
-          <button type="button" onClick={() => shiftMonth(-1)} aria-label="Попередній місяць">
-            ‹
+          <button
+            type="button"
+            className="month-arrow"
+            onClick={() => shiftMonth(-1)}
+            aria-label="Попередній місяць"
+          >
+            <span aria-hidden="true">👈🏼</span>
           </button>
-          <span>{monthTitle(year, month)}</span>
-          <button type="button" onClick={() => shiftMonth(1)} aria-label="Наступний місяць">
-            ›
+          <span className="month-name">{monthTitle(year, month)}</span>
+          <button
+            type="button"
+            className="month-arrow"
+            onClick={() => shiftMonth(1)}
+            aria-label="Наступний місяць"
+          >
+            <span aria-hidden="true">👉🏼</span>
           </button>
         </div>
       </header>

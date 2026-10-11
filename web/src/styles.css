@@ -227,13 +227,32 @@ a {
   font-weight: 800;
 }
 
-.month-nav button {
-  width: 36px;
-  height: 36px;
+/* Pointing hands, not chevrons: they carry no box of their own, so the
+   month sits between two gestures exactly as in the Figma. The tap target
+   stays a full 44px even though the emoji is smaller. */
+.month-arrow {
+  width: 44px;
+  height: 44px;
   border: 0;
-  border-radius: 12px;
-  background: var(--btn-bg);
+  background: transparent;
   cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  /* Emoji ignore colour, so dim the whole glyph when the theme is dark. */
+  transition: transform 0.12s ease;
+}
+
+.month-arrow:active {
+  transform: scale(0.88);
+}
+
+.month-name {
+  font-family: Unbounded, Manrope, system-ui, sans-serif;
+  font-size: 17px;
+  letter-spacing: -0.01em;
 }
 
 .calendar {

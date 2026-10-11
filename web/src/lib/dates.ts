@@ -1,17 +1,3 @@
-const MONTHS_UK = [
-  "Січень",
-  "Лютий",
-  "Березень",
-  "Квітень",
-  "Травень",
-  "Червень",
-  "Липень",
-  "Серпень",
-  "Вересень",
-  "Жовтень",
-  "Листопад",
-  "Грудень",
-];
 
 // Genitive case — "10 жовтня", not "10 Жовтень".
 const MONTHS_UK_GENITIVE = [
@@ -31,8 +17,26 @@ const MONTHS_UK_GENITIVE = [
 
 const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
+/* The month strip is English and lowercase in the client's Figma —
+   "october 2026" — while the rest of the interface stays Ukrainian. Her
+   call, deliberately. */
+const MONTHS_EN_LOWER = [
+  "january",
+  "february",
+  "march",
+  "april",
+  "may",
+  "june",
+  "july",
+  "august",
+  "september",
+  "october",
+  "november",
+  "december",
+];
+
 export function monthTitle(year: number, month: number) {
-  return `${MONTHS_UK[month]} ${year}`;
+  return `${MONTHS_EN_LOWER[month]} ${year}`;
 }
 
 export function isoDate(year: number, month: number, day: number) {
@@ -91,5 +95,7 @@ export function formatDayTitle(iso: string) {
     "П’ятниця",
     "Субота",
   ][date.getDay()];
-  return `${weekday}, ${d} ${MONTHS_UK[m - 1].toLowerCase()}`;
+  // "5 жовтня", not "5 жовтень" — the genitive is both correct Ukrainian
+  // and what the Figma shows.
+  return `${weekday}, ${d} ${MONTHS_UK_GENITIVE[m - 1]}`;
 }
