@@ -182,6 +182,17 @@ a {
   gap: 8px;
 }
 
+/* An emoji's ink is not centred on its own line box: this font gives the
+   glyph an 18px ascent against a 6px descent, so centring the box still
+   leaves the picture sitting high. The correction is measured, not guessed
+   — ink centre against button centre, read from the font's own metrics —
+   and it lives on an inner span so the icon's own transform stays free for
+   the sun/moon cross-fade. */
+.emoji-ink {
+  display: block;
+  transform: translateY(4px);
+}
+
 .btn-emoji {
   font-size: 18px;
   line-height: 1;
@@ -254,6 +265,7 @@ a {
   line-height: 1;
   display: grid;
   place-items: center;
+
   position: absolute;
   inset: 0;
   width: 20px;
@@ -1309,7 +1321,8 @@ a {
    centred. The long second line still wraps, centred, on a narrow phone. */
 .success-calm {
   margin: 10px auto 0;
-  max-width: 300px;
+  /* No narrow cap: the middle line is meant to sit on one line, and 300px
+     was forcing it to wrap. */
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink);

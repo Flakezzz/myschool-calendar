@@ -301,8 +301,8 @@ export function App() {
           subtitle: pending.subtitle,
           calm:
             pending.kind === "pass"
-              ? "оплата пройшла!\nабон активний — наступні клаби безкоштовні, сі ю лейтер, алігейтор"
-              : "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком, сі ю лейтер, алігейтор",
+              ? "оплата пройшла!\nабон активний — наступні клаби безкоштовні\nсі ю лейтер, алігейтор"
+              : "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком\nсі ю лейтер, алігейтор",
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -416,7 +416,7 @@ export function App() {
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
         calm:
-          "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком, сі ю лейтер, алігейтор",
+          "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком\nсі ю лейтер, алігейтор",
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
@@ -638,7 +638,9 @@ export function App() {
                 onClick={() => setBookingsOpen(true)}
                 aria-label="Мої клаби"
               >
-                <span className="btn-emoji" aria-hidden="true">🎟</span>
+                <span className="btn-emoji" aria-hidden="true">
+                  <span className="emoji-ink">🎟</span>
+                </span>
                 {mine.bookings.length ? <i className="badge-dot" /> : null}
               </button>
             ) : null}

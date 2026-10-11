@@ -16,8 +16,12 @@ export function ThemeToggle() {
     <button type="button" className="theme-btn" onClick={toggle} aria-label="Змінити тему">
       {/* The sun and the moon are emoji in her Figma, not drawn icons. */}
       <span className="theme-icon-stack" aria-hidden="true">
-        <span className={`theme-icon${mode === "light" ? " is-active" : ""}`}>🌞</span>
-        <span className={`theme-icon${mode === "dark" ? " is-active" : ""}`}>🌝</span>
+        <span className={`theme-icon${mode === "light" ? " is-active" : ""}`}>
+          <span className="emoji-ink">🌞</span>
+        </span>
+        <span className={`theme-icon${mode === "dark" ? " is-active" : ""}`}>
+          <span className="emoji-ink">🌝</span>
+        </span>
       </span>
     </button>
   );
