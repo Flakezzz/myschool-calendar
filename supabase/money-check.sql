@@ -107,3 +107,16 @@ select 'TOTALS' as report,
        count(*) filter (where status = 'expired') as never_paid,
        count(*) filter (where status in ('created', 'processing')) as in_flight
 from payments;
+
+-- ============================================================== CHECK 8
+-- Money went back but the seat did not.
+-- Cancelling a club refunds first and deletes second. If the second half
+-- never ran, these people were paid back and are still booked in.
+select 'CHECK 8: refunded but still booked' as check,
+       p.invoice_id, p.amount_kop / 100 as uah, p.telegram_user_id,
+       r.club_id, p.refunded_at
+from payments p
+join registrations r on r.id = p.registration_id
+where p.refunded_at is not null
+  and r.payment_state = 'confirmed'
+order by p.refunded_at desc;
