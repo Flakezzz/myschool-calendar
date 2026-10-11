@@ -8,7 +8,6 @@ import { ClubList } from "./components/ClubList";
 import { ClubRegistrationsSheet } from "./components/ClubRegistrationsSheet";
 import { ClubSheet } from "./components/ClubSheet";
 import { FaqSheet } from "./components/FaqSheet";
-import { TicketIcon } from "./components/Icons";
 import { MyBookingsSheet } from "./components/MyBookingsSheet";
 import { PaymentSuccessSheet } from "./components/PaymentSuccessSheet";
 import { SubscriptionsSheet } from "./components/SubscriptionsSheet";
@@ -639,7 +638,7 @@ export function App() {
                 onClick={() => setBookingsOpen(true)}
                 aria-label="Мої клаби"
               >
-                <TicketIcon width={20} height={20} />
+                <span className="btn-emoji" aria-hidden="true">🎟</span>
                 {mine.bookings.length ? <i className="badge-dot" /> : null}
               </button>
             ) : null}

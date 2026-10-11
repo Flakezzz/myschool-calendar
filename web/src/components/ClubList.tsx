@@ -22,8 +22,14 @@ export function ClubList({ clubs, onOpen }: Props) {
         const full = left <= 0;
         return (
           <li key={club.id}>
-            <button type="button" className="club-card" onClick={() => onOpen(club)}>
-              <span className="stripe" style={{ background: club.color }} />
+            {/* "колір під колір клабу": in her design the card is outlined
+                in the club's own colour rather than carrying a stripe. */}
+            <button
+              type="button"
+              className="club-card"
+              style={{ borderColor: club.color }}
+              onClick={() => onOpen(club)}
+            >
               <div className="club-body">
                 <div className="club-top">
                   <strong>{club.title}</strong>

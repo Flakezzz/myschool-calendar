@@ -213,7 +213,7 @@ const SKIRT = 140;
             </dd>
           </div>
           <div>
-            <dt>тічер</dt>
+            <dt>тічер(ка)</dt>
             <dd>{club.teacher}</dd>
           </div>
           <div>
