@@ -29,7 +29,10 @@ type Action =
   | "cancel_booking"
   | "my_bookings"
   | "payment_status"
-  | "am_i_admin";
+  | "am_i_admin"
+  | "my_club_link"
+  | "club_link"
+  | "reconcile_payments";
 
 async function call(action: Action, payload: unknown, table?: "clubs" | "subscriptions"): Promise<any> {
   // Supabase's gateway requires a valid JWT in Authorization before a
@@ -82,7 +85,17 @@ function toSubscriptionRow(sub: Subscription) {
 }
 
 export const saveClub = (club: Club) => call("upsert", toClubRow(club), "clubs");
-export const deleteClub = (id: string) => call("delete", { id }, "clubs");
+/** Deleting a club refunds everyone who paid for it and tells them it is
+ * off, so the answer says what actually happened. */
+export async function deleteClub(id: string): Promise<ClubCancellation> {
+  const data = await call("delete", { id }, "clubs");
+  return {
+    told: data.result?.told ?? 0,
+    refunded: data.result?.refunded ?? 0,
+    refundFailed: data.result?.refund_failed ?? 0,
+    refundUah: data.result?.refund_uah ?? 0,
+  };
+}
 
 export const saveSubscription = (sub: Subscription) => call("upsert", toSubscriptionRow(sub), "subscriptions");
 export const deleteSubscription = (id: string) => call("delete", { id }, "subscriptions");
@@ -266,4 +279,38 @@ export function nextPass(passes: MyPass[]): MyPass | null {
 
 export function passSessionsLeft(pass: MyPass): number | null {
   return pass.sessionsTotal === null ? null : pass.sessionsTotal - pass.sessionsUsed;
+}
+
+
+// ------------------------------------------------------- club meeting link
+// The link is no longer part of the public catalogue — the anon key used to
+// be able to read every club's meeting_url, which was a free pass into any
+// online class. It is now fetched per club, and only for people who are
+// entitled to it.
+
+/** For the person attending: answers null unless their booking is paid. */
+export async function fetchMyClubLink(clubId: string): Promise<string | null> {
+  const data = await call("my_club_link", { clubId });
+  return data.result?.meeting_url ?? null;
+}
+
+/** For the admin edit form, which would otherwise save an empty link over
+ * the real one. */
+export async function fetchClubLinkForEdit(clubId: string): Promise<string | null> {
+  const data = await call("club_link", { clubId });
+  return data.result?.meeting_url ?? null;
+}
+
+export type ClubCancellation = {
+  told: number;
+  refunded: number;
+  refundFailed: number;
+  refundUah: number;
+};
+
+/** Asks Monobank about every payment we might have stale records for.
+ * Admin-only; nothing else ever compares the two sides. */
+export async function reconcilePayments(): Promise<{ checked: number; changed: Record<string, string> }> {
+  const data = await call("reconcile_payments", {});
+  return { checked: data.result?.checked ?? 0, changed: data.result?.changed ?? {} };
 }

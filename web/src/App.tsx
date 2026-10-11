@@ -19,6 +19,7 @@ import {
   buySubscription,
   cancelBooking,
   deleteClub,
+  fetchClubLinkForEdit,
   fetchClubRegistrations,
   fetchIsAdmin,
   fetchMine,
@@ -497,20 +498,39 @@ export function App() {
     setEditingClub(blankClub());
   };
 
-  const onAdminEdit = (club: Club) => {
+  const onAdminEdit = async (club: Club) => {
     setAdminError(null);
     setEditingIsNew(false);
-    setEditingClub(club);
+    // The meeting link is withheld from the public catalogue, so it has to
+    // be fetched before the form opens — the form seeds its state once, and
+    // saving an empty field would wipe the real link.
+    let withLink = club;
+    try {
+      withLink = { ...club, meetingUrl: await fetchClubLinkForEdit(club.id) };
+    } catch {
+      // Leave the field empty rather than block editing everything else.
+    }
+    setEditingClub(withLink);
   };
 
   const onAdminDelete = async (club: Club) => {
-    const warning = club.taken > 0 ? ` Разом із ним буде видалено ${club.taken} записів.` : "";
-    const confirmed = await confirmDialog(`Видалити «${club.title}»?${warning}`);
+    // Deleting a club now gives people their money back and tells them it
+    // is off, so the question has to say that out loud.
+    const warning =
+      club.taken > 0
+        ? ` ${club.taken} ${club.taken === 1 ? "людина" : "людей"} отримає повідомлення, а оплати повернемо на карти.`
+        : "";
+    const confirmed = await confirmDialog(`Скасувати «${club.title}»?${warning}`);
     if (!confirmed) return;
     setAdminError(null);
     try {
-      await deleteClub(club.id);
+      const outcome = await deleteClub(club.id);
       await Promise.all([reloadClubs(), reloadMine()]);
+      if (outcome.refundFailed > 0) {
+        setAdminError(
+          `Клаб скасовано, але ${outcome.refundFailed} повернення не пройшло — моно відмовив. Спробуй ще раз або поверни вручну.`,
+        );
+      }
     } catch (err) {
       setAdminError(errorText(err));
     }

@@ -251,6 +251,21 @@ async function refundInvoice(invoiceId: string, amountKop: number | null) {
   return await res.json();
 }
 
+/** Refunds one invoice and says whether it was accepted, instead of
+ * throwing. Cancelling a club refunds several people at once, and one
+ * failure must not stop the rest from getting their money. */
+async function tryRefund(invoiceId: string, amountKop: number | null): Promise<boolean> {
+  try {
+    await refundInvoice(invoiceId, amountKop);
+    return true;
+  } catch (err) {
+    console.error("refund failed", invoiceId, describe(err));
+    // Unclaim it so an admin (or the next attempt) can try again.
+    await supabase.rpc("mark_refund_failed", { p_invoice_id: invoiceId });
+    return false;
+  }
+}
+
 /** Someone who closed the payment page and came back should land straight
  * on it again, not be told to wait out the fifteen-minute sweep. Returns
  * the page to resume, or null once the stale reservation has been cleared. */
@@ -485,6 +500,18 @@ Deno.serve(async (req) => {
         return json({ ok: true, bookings: bookings.data, passes: passes.data });
       }
 
+      case "my_club_link": {
+        if (!body.clubId) return json({ error: "bad_payload" }, 400);
+        // The link is not in the public catalogue any more: the database
+        // hands it over only to someone whose booking is paid for.
+        const { data, error } = await supabase.rpc("club_link_for_user", {
+          p_club_id: body.clubId,
+          p_user_id: user.id,
+        });
+        if (error) throw error;
+        return json({ ok: true, result: { meeting_url: data ?? null } });
+      }
+
       case "am_i_admin": {
         // Answers only about the caller. The app used to read the whole
         // admin list from app_config with the public key, which published
@@ -517,6 +544,65 @@ Deno.serve(async (req) => {
       return json({ ok: true, registrations: data });
     }
 
+    if (action === "club_link") {
+      if (!body.clubId) return json({ error: "bad_payload" }, 400);
+      // The edit form needs the current value, or saving would wipe it.
+      const { data, error } = await supabase
+        .from("clubs")
+        .select("meeting_url")
+        .eq("id", body.clubId)
+        .maybeSingle();
+      if (error) throw error;
+      return json({ ok: true, result: { meeting_url: data?.meeting_url ?? null } });
+    }
+
+    if (action === "reconcile_payments") {
+      // Nothing used to compare our records with Monobank's, so a payment
+      // whose webhook never arrived stayed wrong forever. Asking Monobank
+      // directly is the only way to find those.
+      const { data: list, error } = await supabase.rpc("payments_to_reconcile", {
+        p_limit: 50,
+      });
+      if (error) throw error;
+
+      const changed: Record<string, string> = {};
+      let checked = 0;
+      for (const row of list ?? []) {
+        checked++;
+        let mono: { status?: string } | null = null;
+        try {
+          const res = await fetch(
+            `https://api.monobank.ua/api/merchant/invoice/status?invoiceId=${row.invoice_id}`,
+            { headers: { "X-Token": MONO_TOKEN } },
+          );
+          if (res.ok) mono = await res.json();
+        } catch (err) {
+          console.error("reconcile status failed", row.invoice_id, describe(err));
+        }
+        const theirs = mono?.status;
+        if (!theirs || theirs === row.our_status) continue;
+
+        if (theirs === "reversed") {
+          // Money went back and we never heard about it.
+          await supabase.rpc("mark_refund_done", { p_invoice_id: row.invoice_id });
+          changed[row.invoice_id] = `${row.our_status} -> reversed`;
+        } else {
+          // Everything else goes through the same door as the webhook, so
+          // the orphan and idempotency rules apply unchanged.
+          try {
+            await supabase.rpc("apply_payment_status", {
+              p_invoice_id: row.invoice_id,
+              p_status: theirs,
+            });
+            changed[row.invoice_id] = `${row.our_status} -> ${theirs}`;
+          } catch (err) {
+            console.error("reconcile apply failed", row.invoice_id, describe(err));
+          }
+        }
+      }
+      return json({ ok: true, result: { checked, changed } });
+    }
+
     if (table !== "clubs" && table !== "subscriptions") {
       return json({ error: "bad_table" }, 400);
     }
@@ -538,6 +624,44 @@ Deno.serve(async (req) => {
       // function still answered {ok:true} and the UI would report a
       // successful delete that never happened.
       if (!body.id) return json({ error: "bad_payload" }, 400);
+
+      if (table === "clubs") {
+        // Deleting a club used to be pure profit: the bookings cascaded
+        // away, the money stayed and nobody was told their class was off.
+        // Refunds happen between the two halves of the cancellation.
+        const { data: plan, error: planError } = await supabase.rpc(
+          "prepare_club_cancellation",
+          { p_club_id: body.id },
+        );
+        if (planError) {
+          const code = dbErrorCode(describe(planError));
+          if (code) return json({ error: code }, 409);
+          throw planError;
+        }
+
+        let refunded = 0;
+        let failed = 0;
+        for (const r of plan?.refunds ?? []) {
+          if (await tryRefund(r.invoice_id, r.amount_kop)) refunded++;
+          else failed++;
+        }
+
+        const { data: outcome, error: finishError } = await supabase.rpc(
+          "finish_club_cancellation",
+          { p_club_id: body.id },
+        );
+        if (finishError) {
+          const code = dbErrorCode(describe(finishError));
+          if (code) return json({ error: code }, 409);
+          throw finishError;
+        }
+
+        return json({
+          ok: true,
+          result: { ...outcome, refunded, refund_failed: failed },
+        });
+      }
+
       const { error } = await supabase.from(table).delete().eq("id", body.id);
       if (error) throw error;
     } else {

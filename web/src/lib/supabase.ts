@@ -25,6 +25,8 @@ function fromClubRow(row: any): Club {
     taken: row.taken,
     priceUah: row.price_uah,
     color: row.color,
+    // Never present in the public catalogue; filled in on demand for the
+    // admin form and for attendees who paid.
     meetingUrl: row.meeting_url ?? null,
     videoUrl: row.video_url ?? null,
   };
@@ -40,8 +42,16 @@ function fromSubscriptionRow(row: any): Subscription {
   };
 }
 
+// Deliberately NOT "*": meeting_url is withheld from the public key, since
+// anyone could read the bundle, take this key and pull every club's meeting
+// link straight out of the API. Asking for it here would now fail outright.
+// See supabase/money-fixes.sql, and fetchMyClubLink() for how an attendee
+// gets the link.
+const CLUB_PUBLIC_COLUMNS =
+  "id,title,description,date,start_time,end_time,teacher,level,seats,taken,price_uah,color,video_url";
+
 export async function fetchClubs(): Promise<Club[]> {
-  const { data, error } = await supabase.from("clubs").select("*").order("date");
+  const { data, error } = await supabase.from("clubs").select(CLUB_PUBLIC_COLUMNS).order("date");
   if (error) throw error;
   return data.map(fromClubRow);
 }
