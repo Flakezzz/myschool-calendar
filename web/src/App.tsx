@@ -60,6 +60,15 @@ type SuccessInfo = {
 const EMPTY_MINE: Mine = { bookings: [], passes: [] };
 
 // The database raises these on purpose; everything else is unexpected.
+/* The confirmation, laid out as in the Figma: the sign-off sits under an
+   empty line, and there is one text — she drew a single screen, so buying a
+   pass says the same thing as booking a club. */
+const PAID_TEXT =
+  "оплата пройшла!\n" +
+  "за годину до клабу тобі прийде нагадування з лінком\n" +
+  "\n" +
+  "сі ю лейтер, алігейтор";
+
 const ERROR_TEXT: Record<string, string> = {
   already_booked: "ти вже тут записаний",
   payment_pending: "оплата вже почата — заверши її або зачекай 20 хвилин, і місце звільниться",
@@ -300,10 +309,7 @@ export function App() {
           heading: "санчізес",
           title: pending.clubTitle,
           subtitle: pending.subtitle,
-          calm:
-            pending.kind === "pass"
-              ? "оплата пройшла!\nабон активний — наступні клаби безкоштовні\nсі ю лейтер, алігейтор"
-              : "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком\nсі ю лейтер, алігейтор",
+          calm: PAID_TEXT,
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -416,8 +422,7 @@ export function App() {
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-        calm:
-          "оплата пройшла!\nза годину до клабу тобі прийде нагадування з лінком\nсі ю лейтер, алігейтор",
+        calm: PAID_TEXT,
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
