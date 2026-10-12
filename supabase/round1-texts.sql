@@ -11,7 +11,7 @@ where id = 'sub-4';
 update subscriptions set
   title = 'такий норм набірчік',
   sessions = '8 клабів на місяць',
-  description = 'ходи на шо хо: 8 клубів'
+  description = 'ходи на шо хо: 8 клабів'
 where id = 'sub-8';
 
 update subscriptions set
