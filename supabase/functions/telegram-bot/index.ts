@@ -27,6 +27,8 @@ const WEBAPP_URL = Deno.env.get("WEBAPP_URL") ?? "https://flakezzz.github.io/mys
 
 // The client's own words, exactly as she sent them — spelling, spacing and
 // the emoji that sit flush against their club names. Do not tidy them up.
+// One deliberate exception: she wrote "клуб" in the last line and the whole
+// app says "клаб", so that single word was changed on the user's say-so.
 const WELCOME = [
   "приииивіт, це календар клабів майскул",
   "",
@@ -46,7 +48,7 @@ const WELCOME = [
   "",
   "на початку у нас будуть функціонувати 4 клаби, згодом підключимо всі",
   "",
-  "заходь в календар, обирай свій клуб і летс рокнролл 💃🏽🕺",
+  "заходь в календар, обирай свій клаб і летс рокнролл 💃🏽🕺",
 ].join("\n");
 
 async function telegram(method: string, body: unknown): Promise<void> {
