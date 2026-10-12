@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as Reac
 import { Club } from "../data/clubs";
 import { ShareIcon } from "./Icons";
 import { ClubVideo } from "./ClubVideo";
-import { passSessionsLeft, type MyPass } from "../lib/api";
+import { type MyPass } from "../lib/api";
 
 type Props = {
   club: Club;
@@ -169,7 +169,6 @@ const SKIRT = 140;
   const left = club.seats - club.taken;
   const full = left <= 0;
   const booked = !!bookedRegistrationId;
-  const sessionsLeft = pass ? passSessionsLeft(pass) : null;
 
   return (
     <div className={`sheet-backdrop${closing ? " closing" : ""}`} onClick={onClose} role="presentation">
@@ -234,15 +233,10 @@ const SKIRT = 140;
           </div>
         ) : null}
 
-        {booked ? (
-          <p className="sheet-note is-booked">ти в ділі ✓</p>
-        ) : pass ? (
-          <p className="sheet-note">
-            в тебе абон «{pass.title}»:{" "}
-            {sessionsLeft === null ? "безліміт" : `лишилось ${sessionsLeft}`} — цей клаб
-            безкоштовний
-          </p>
-        ) : null}
+        {/* The pass note that used to sit here is gone at the client's
+            request. What the pass does is already visible on the button,
+            which reads "за абоном" instead of a price. */}
+        {booked ? <p className="sheet-note is-booked">ти в ділі ✓</p> : null}
 
         <div className="sheet-actions">
           {booked ? (
