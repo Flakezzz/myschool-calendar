@@ -494,11 +494,14 @@ export function App() {
         return;
       }
 
+      // The third place a pass purchase can land — when the server says no
+      // payment is needed. Same screen, same words as the other two.
       setSuccess({
+        heading: "санчізес",
         title: sub.title,
         subtitle: sub.sessions,
         priceUah: sub.priceUah,
-        note: "абон активний — наступні клаби безкоштовні",
+        calm: PAID_TEXT,
       });
     } catch (err) {
       setSubsOpen(false);
