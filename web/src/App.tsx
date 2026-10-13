@@ -60,14 +60,21 @@ type SuccessInfo = {
 const EMPTY_MINE: Mine = { bookings: [], passes: [] };
 
 // The database raises these on purpose; everything else is unexpected.
-/* The confirmation, laid out as in the Figma: the sign-off sits under an
-   empty line, and there is one text — she drew a single screen, so buying a
-   pass says the same thing as booking a club. */
-const PAID_TEXT =
+/* Two confirmations, in her words. The line breaks are hers as well: the
+   club one breaks after "прийде", and in both the sign-off sits under an
+   empty line. */
+const PAID_CLUB_TEXT =
   "оплата пройшла!\n" +
-  "за годину до клабу тобі прийде нагадування з лінком\n" +
+  "за годину до клабу тобі прийде\n" +
+  "нагадування з лінком\n" +
   "\n" +
   "сі ю лейтер, алігейтор";
+
+const PAID_PASS_TEXT =
+  "оплата пройшла\n" +
+  "хутчіш записуйся на клаб!\n" +
+  "\n" +
+  "in a while crocodile";
 
 const ERROR_TEXT: Record<string, string> = {
   already_booked: "ти вже тут записаний",
@@ -309,7 +316,7 @@ export function App() {
           heading: "санчізес",
           title: pending.clubTitle,
           subtitle: pending.subtitle,
-          calm: PAID_TEXT,
+          calm: pending.kind === "pass" ? PAID_PASS_TEXT : PAID_CLUB_TEXT,
           priceUah: pending.priceUah,
         });
       } else if (status === "unknown") {
@@ -422,7 +429,7 @@ export function App() {
         heading: result.paidWith === "subscription" ? "записали за абоном" : "санчізес",
         title: club.title,
         subtitle: `${formatShortDate(club.date)} · ${club.startTime}–${club.endTime} · ${club.teacher}`,
-        calm: PAID_TEXT,
+        calm: PAID_CLUB_TEXT,
         priceUah: result.paidWith === "subscription" ? undefined : result.pricePaidUah,
         note:
           result.paidWith === "subscription" && result.sessionsLeft !== null
@@ -495,13 +502,13 @@ export function App() {
       }
 
       // The third place a pass purchase can land — when the server says no
-      // payment is needed. Same screen, same words as the other two.
+      // payment is needed. A pass has its own wording, separate from a club.
       setSuccess({
         heading: "санчізес",
         title: sub.title,
         subtitle: sub.sessions,
         priceUah: sub.priceUah,
-        calm: PAID_TEXT,
+        calm: PAID_PASS_TEXT,
       });
     } catch (err) {
       setSubsOpen(false);
