@@ -148,6 +148,9 @@ const KNOWN_DB_ERRORS = [
   "booking_not_found",
   "subscription_not_found",
   "already_has_pass",
+  // A plan someone has bought cannot be deleted — it is what the receipts
+  // point at. Hiding it is the way.
+  "subscription_in_use",
 ];
 
 function dbErrorCode(message: string): string | null {
@@ -715,6 +718,17 @@ Deno.serve(async (req) => {
           ok: true,
           result: { ...outcome, refunded, refund_failed: failed },
         });
+      }
+
+      if (table === "subscriptions") {
+        // The database refuses this once anyone has bought the plan, but a
+        // raw foreign-key error means nothing to the person reading it.
+        const { count, error: usedError } = await supabase
+          .from("registrations")
+          .select("id", { count: "exact", head: true })
+          .eq("subscription_id", body.id);
+        if (usedError) throw usedError;
+        if ((count ?? 0) > 0) return json({ error: "subscription_in_use" }, 409);
       }
 
       const { error } = await supabase.from(table).delete().eq("id", body.id);

@@ -31,7 +31,7 @@ import {
   type Mine,
   type MyBooking,
 } from "./lib/api";
-import { formatDayTitle, formatShortDate, isoDate, monthTitle } from "./lib/dates";
+import { formatDayTitle, formatShortDate, hasStarted, isoDate, monthTitle } from "./lib/dates";
 import { fetchClubs, fetchSubscriptions } from "./lib/supabase";
 import {
   confirmCancelBooking,
@@ -90,6 +90,7 @@ const ERROR_TEXT: Record<string, string> = {
   unauthorized: "відкрий через телеграм",
   forbidden: "немає доступу",
   admin_session_expired: "Сесія адміна застаріла. Закрийте застосунок і відкрийте знову.",
+  subscription_in_use: "цей абонемент уже купували — його не можна видалити. Зніми галочку «видимий» у таблиці, і він зникне з додатка.",
 };
 
 function errorText(err: unknown): string {
@@ -559,11 +560,18 @@ export function App() {
   const onAdminDelete = async (club: Club) => {
     // Deleting a club now gives people their money back and tells them it
     // is off, so the question has to say that out loud.
-    const warning =
-      club.taken > 0
+    // A club that has already happened is being tidied away, not cancelled:
+    // nobody is told and nobody is refunded, so the question must not
+    // promise either.
+    const past = hasStarted(club.date, club.startTime);
+    const warning = past
+      ? " Клаб уже минув — нікому не повідомляємо і гроші не повертаємо."
+      : club.taken > 0
         ? ` ${club.taken} ${club.taken === 1 ? "людина" : "людей"} отримає повідомлення, а оплати повернемо на карти.`
         : "";
-    const confirmed = await confirmDialog(`Скасувати «${club.title}»?${warning}`);
+    const confirmed = await confirmDialog(
+      `${past ? "Видалити" : "Скасувати"} «${club.title}»?${warning}`,
+    );
     if (!confirmed) return;
     setAdminError(null);
     try {
