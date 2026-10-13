@@ -584,7 +584,11 @@ Deno.serve(async (req) => {
       let checked = 0;
       for (const row of list ?? []) {
         checked++;
-        let mono: { status?: string; amount?: number } | null = null;
+        let mono: {
+          status?: string;
+          amount?: number;
+          cancelList?: { status?: string }[];
+        } | null = null;
         try {
           const res = await fetch(
             `https://api.monobank.ua/api/merchant/invoice/status?invoiceId=${row.invoice_id}`,
@@ -600,9 +604,20 @@ Deno.serve(async (req) => {
         // A refund we promised but never sent. Cancelling claims the refund
         // on the row before calling Monobank, so if that call never
         // happened the row says "refunded" while the money is still ours.
-        // Monobank still saying success is the proof, and the only way to
-        // find it: the money-check skips refunded rows by design.
+        //
+        // The invoice's own status is not enough to tell: a refund takes
+        // days to settle, and until it does the invoice still reads
+        // "success". Whether one is under way shows in cancelList instead.
+        // Going by status alone would send a second refund to someone whose
+        // first one was merely still travelling.
+        const refundUnderWay = (mono?.cancelList ?? []).some(
+          (c) => c.status === "processing" || c.status === "success",
+        );
         if (row.refund_claimed && (theirs === "success" || theirs === "hold")) {
+          if (refundUnderWay) {
+            // Accepted by Monobank, just not settled. Nothing to do.
+            continue;
+          }
           if (await tryRefund(row.invoice_id, mono?.amount ?? null)) {
             changed[row.invoice_id] = "обіцяне повернення нарешті пішло";
           } else {
