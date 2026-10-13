@@ -24,6 +24,14 @@ export function MyBookingsSheet({
   onOpenClub,
   onOpenFaq,
 }: Props) {
+  // A pass with nothing left on it is spent, and listing it only makes the
+  // screen read as a pile of "0 з 4". Expired ones the server already
+  // withholds; this drops the used-up ones too.
+  const livePasses = passes.filter((p) => {
+    const left = passSessionsLeft(p);
+    return left === null || left > 0;
+  });
+
   // Only what is still ahead: the client asked for the "вже минули" list to
   // go, so a finished club simply drops off this screen.
   const upcoming = bookings
@@ -57,11 +65,11 @@ export function MyBookingsSheet({
           <p className="sheet-desc">завантажуємо…</p>
         ) : (
           <>
-            {passes.length ? (
+            {livePasses.length ? (
               <section className="mine-section">
                 <h3>Абонементи</h3>
                 <ul className="mine-list">
-                  {passes.map((pass) => {
+                  {livePasses.map((pass) => {
                     const left = passSessionsLeft(pass);
                     return (
                       <li key={pass.id} className="pass-card">
