@@ -177,7 +177,7 @@ const CLUB_COLUMNS = [
 ];
 const SUBSCRIPTION_COLUMNS = [
   "id", "title", "sessions", "description", "price_uah",
-  "sessions_count", "days_valid",
+  "sessions_count", "days_valid", "is_visible",
 ];
 
 function pick(row: Record<string, unknown>, allowed: string[]): Record<string, unknown> {

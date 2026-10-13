@@ -57,7 +57,14 @@ export async function fetchClubs(): Promise<Club[]> {
 }
 
 export async function fetchSubscriptions(): Promise<Subscription[]> {
-  const { data, error } = await supabase.from("subscriptions").select("*").order("price_uah");
+  // is_visible is the switch that takes a plan off the shelf without
+  // deleting the row — purchase receipts point at it. Hidden plans are also
+  // refused server-side, so this is the display half of one rule.
+  const { data, error } = await supabase
+    .from("subscriptions")
+    .select("*")
+    .eq("is_visible", true)
+    .order("price_uah");
   if (error) throw error;
   return data.map(fromSubscriptionRow);
 }
