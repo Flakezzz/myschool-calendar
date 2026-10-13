@@ -559,6 +559,19 @@ Deno.serve(async (req) => {
     }
 
     if (action === "reconcile_payments") {
+      // Whatever this answers ends up in front of the school, not a
+      // developer, so the statuses get read out in words.
+      const asWords = (status: string): string =>
+        ({
+          created: "чекає оплату",
+          processing: "обробляється",
+          hold: "заморожено",
+          success: "оплачено",
+          failure: "не пройшла",
+          reversed: "повернуто",
+          expired: "прострочено",
+        })[status] ?? status;
+
       // Nothing used to compare our records with Monobank's, so a payment
       // whose webhook never arrived stayed wrong forever. Asking Monobank
       // directly is the only way to find those.
@@ -591,9 +604,9 @@ Deno.serve(async (req) => {
         // find it: the money-check skips refunded rows by design.
         if (row.refund_claimed && (theirs === "success" || theirs === "hold")) {
           if (await tryRefund(row.invoice_id, mono?.amount ?? null)) {
-            changed[row.invoice_id] = "promised refund actually sent";
+            changed[row.invoice_id] = "обіцяне повернення нарешті пішло";
           } else {
-            changed[row.invoice_id] = "promised refund STILL failing — check by hand";
+            changed[row.invoice_id] = "повернення так і не йде — поверни вручну";
           }
           continue;
         }
@@ -603,7 +616,7 @@ Deno.serve(async (req) => {
         if (theirs === "reversed") {
           // Money went back and we never heard about it.
           await supabase.rpc("mark_refund_done", { p_invoice_id: row.invoice_id });
-          changed[row.invoice_id] = `${row.our_status} -> reversed`;
+          changed[row.invoice_id] = `${asWords(row.our_status)} → повернуто`;
         } else {
           // Everything else goes through the same door as the webhook, so
           // the orphan and idempotency rules apply unchanged.
@@ -612,15 +625,15 @@ Deno.serve(async (req) => {
               p_invoice_id: row.invoice_id,
               p_status: theirs,
             });
-            changed[row.invoice_id] = `${row.our_status} -> ${theirs}`;
+            changed[row.invoice_id] = `${asWords(row.our_status)} → ${asWords(theirs)}`;
             // Money that arrived after we had given the seat away. The
             // webhook path refunds these; reconciliation has to as well, or
             // finding them would achieve nothing.
             if (applied?.orphan) {
               const ok = await tryRefund(row.invoice_id, mono?.amount ?? null);
               changed[row.invoice_id] = ok
-                ? `${row.our_status} -> ${theirs}, money returned`
-                : `${row.our_status} -> ${theirs}, REFUND FAILED — check by hand`;
+                ? `${asWords(row.our_status)} → ${asWords(theirs)}, гроші повернули`
+                : `${asWords(row.our_status)} → ${asWords(theirs)}, повернути не вдалось — зроби вручну`;
             }
           } catch (err) {
             console.error("reconcile apply failed", row.invoice_id, describe(err));
