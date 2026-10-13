@@ -629,6 +629,18 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Money we are holding with nothing behind it, whose refund failed
+        // at the time. Both sides say "success", so the status comparison
+        // below would walk past it and it would sit there until a person
+        // read the money-check and noticed.
+        if (row.no_booking && !row.refund_claimed && (theirs === "success" || theirs === "hold")) {
+          if (refundUnderWay) continue;
+          changed[row.invoice_id] = (await tryRefund(row.invoice_id, mono?.amount ?? null))
+            ? "гроші без запису — повернули"
+            : "гроші без запису, повернути не вдалось — зроби вручну";
+          continue;
+        }
+
         if (theirs === row.our_status) continue;
 
         if (theirs === "reversed") {
